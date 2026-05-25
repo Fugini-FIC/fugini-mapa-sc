@@ -1,0 +1,321 @@
+10:52:35 INFO __main__ — ============================================================
+10:52:35 INFO __main__ — PIPELINE INICIADO — São Carlos e Região
+10:52:35 INFO __main__ — ============================================================
+10:52:35 INFO __main__ — 
+[1/5] Carregando clientes do TOTVS...
+10:52:35 INFO src.ingestion.loader — Lendo CSV: \\192.168.0.226\pdi\in\full\totvs_cliente.csv
+10:52:39 INFO src.ingestion.loader —   63,233 clientes no CSV total.
+10:52:39 INFO src.ingestion.loader —   60 clientes disponíveis na região.
+10:52:39 INFO src.ingestion.loader —   Colunas: ['cod_cliente', 'nome_cliente', 'limite_disp', 'lat_totvs', 'lng_totvs', 'endereco', 'bairro', 'cep', 'cod_ibge', 'telefone', 'cnpj', 'fonte']
+10:52:39 INFO __main__ — 
+[2/5] Geocodificando clientes...
+10:52:39 INFO src.geocoding.geocoder — Coordenada TOTVS válida: 45 | Precisam geocodificar: 15
+10:52:39 INFO src.geocoding.geocoder — Já no checkpoint: 527 | Novos para API: 15
+10:52:41 INFO src.geocoding.geocoder —   Progresso: 15/15 | ETA: 0.0min
+10:52:41 INFO src.geocoding.geocoder — Cobertura final: 60/60 (100.0%)
+10:52:41 INFO __main__ — 
+[3/5] Enriquecendo com histórico de faturamento...
+10:52:53 INFO src.enrichment.historico — Faturamento NF carregado: 25,353 clientes.
+10:52:53 INFO src.enrichment.historico — Enriquecimento: 1 com faturamento | 59 sem faturamento
+10:52:53 INFO __main__ — 
+[4/5] Carregando prospects da Receita Federal...
+10:52:53 INFO src.enrichment.prospects — Prospects São Carlos: 0 com coordenada
+10:52:53 INFO __main__ — 
+[5/5] Gerando HTMLs (criptografar=False)...
+10:52:53 INFO src.mapping.builder — Gerando master_sc.html...
+10:52:53 INFO src.mapping.builder — ✅ master_sc.html
+10:52:53 INFO src.mapping.builder — Gerando vendedor_sc.html...
+10:52:53 INFO src.mapping.builder — ✅ vendedor_sc.html
+10:52:53 INFO src.mapping.builder — 
+📁 HTMLs em: C:\Users\accrisci\Desktop\Artur\Projetos\Projeto_19_Mapa_Clientes_Sao_Carlos\data\output
+10:52:53 INFO __main__ — 
+Publicação pulada (--no-publish).
+10:52:53 INFO __main__ — 
+============================================================
+10:52:53 INFO __main__ — PIPELINE CONCLUÍDO
+10:52:53 INFO __main__ — ============================================================
+11:24:04 INFO __main__ — ============================================================
+11:24:04 INFO __main__ — PIPELINE INICIADO — São Carlos e Região
+11:24:04 INFO __main__ — ============================================================
+11:24:04 INFO __main__ — 
+[1/5] Carregando clientes do TOTVS...
+11:24:04 INFO src.ingestion.loader — Lendo CSV: \\192.168.0.226\pdi\in\full\totvs_cliente.csv
+11:24:08 INFO src.ingestion.loader —   63,233 clientes no CSV total.
+11:24:09 INFO src.ingestion.loader —   60 clientes disponíveis na região.
+11:24:09 INFO src.ingestion.loader —   Colunas: ['cod_cliente', 'nome_cliente', 'limite_disp', 'lat_totvs', 'lng_totvs', 'endereco', 'bairro', 'cep', 'cod_ibge', 'telefone', 'cnpj', 'fonte']
+11:24:09 INFO __main__ — 
+[2/5] Geocodificando clientes...
+11:24:09 INFO src.geocoding.geocoder — Coordenada TOTVS válida: 45 | Precisam geocodificar: 15
+11:24:09 INFO src.geocoding.geocoder — Já no checkpoint: 542 | Novos para API: 0
+11:24:09 INFO src.geocoding.geocoder — Cobertura final: 60/60 (100.0%)
+11:24:09 INFO __main__ — 
+[3/5] Enriquecendo com histórico de faturamento...
+11:24:57 INFO src.enrichment.historico — Faturamento NF carregado: 25,353 clientes.
+11:24:57 INFO src.enrichment.historico — Enriquecimento: 1 com faturamento | 59 sem faturamento
+11:24:57 INFO __main__ — 
+[4/5] Carregando prospects da Receita Federal...
+11:24:57 INFO src.enrichment.prospects — Prospects São Carlos: 0 com coordenada
+11:24:57 INFO __main__ — 
+[5/5] Gerando HTMLs (criptografar=False)...
+11:24:57 INFO src.mapping.builder — Gerando master_sc.html...
+11:24:58 INFO src.mapping.builder — ✅ master_sc.html
+11:24:58 INFO src.mapping.builder — Gerando vendedor_sc.html...
+11:24:58 INFO src.mapping.builder — ✅ vendedor_sc.html
+11:24:58 INFO src.mapping.builder — 
+📁 HTMLs em: C:\Users\accrisci\Desktop\Artur\Projetos\Projeto_19_Mapa_Clientes_Sao_Carlos\data\output
+11:24:58 INFO __main__ — 
+Publicação pulada (--no-publish).
+11:24:58 INFO __main__ — 
+============================================================
+11:24:58 INFO __main__ — PIPELINE CONCLUÍDO
+11:24:58 INFO __main__ — ============================================================
+12:09:12 INFO __main__ — ============================================================
+12:09:12 INFO __main__ — PIPELINE INICIADO — São Carlos e Região
+12:09:12 INFO __main__ — ============================================================
+12:09:12 INFO __main__ — 
+[1/5] Carregando clientes do TOTVS...
+12:09:12 INFO src.ingestion.loader — Lendo CSV: \\192.168.0.226\pdi\in\full\totvs_cliente.csv
+12:09:16 INFO src.ingestion.loader —   63,233 clientes no CSV total.
+12:09:16 INFO src.ingestion.loader —   60 clientes disponíveis na região.
+12:09:16 INFO src.ingestion.loader —   Colunas: ['cod_cliente', 'nome_cliente', 'limite_disp', 'lat_totvs', 'lng_totvs', 'endereco', 'bairro', 'cep', 'cod_ibge', 'telefone', 'cnpj', 'fonte']
+12:09:16 INFO __main__ — 
+[2/5] Geocodificando clientes...
+12:09:16 INFO src.geocoding.geocoder — Coordenada TOTVS válida: 45 | Precisam geocodificar: 15
+12:09:16 INFO src.geocoding.geocoder — Já no checkpoint: 542 | Novos para API: 0
+12:09:16 INFO src.geocoding.geocoder — Cobertura final: 60/60 (100.0%)
+12:09:16 INFO __main__ — 
+[3/5] Enriquecendo com histórico de faturamento...
+12:09:26 INFO src.enrichment.historico — Faturamento NF carregado: 25,353 clientes.
+12:09:26 INFO src.enrichment.historico — Enriquecimento: 1 com faturamento | 59 sem faturamento
+12:09:26 INFO __main__ — 
+[4/5] Carregando prospects da Receita Federal...
+12:09:27 INFO src.enrichment.prospects — Prospects São Carlos: 431 com coordenada
+12:09:27 INFO __main__ — 
+[5/5] Gerando HTMLs (criptografar=False)...
+12:09:27 INFO src.mapping.builder — Gerando master_sc.html...
+12:09:28 INFO src.mapping.builder — ✅ master_sc.html
+12:09:28 INFO src.mapping.builder — Gerando vendedor_sc.html...
+12:09:29 INFO src.mapping.builder — ✅ vendedor_sc.html
+12:09:29 INFO src.mapping.builder — 
+📁 HTMLs em: C:\Users\accrisci\Desktop\Artur\Projetos\Projeto_19_Mapa_Clientes_Sao_Carlos\data\output
+12:09:29 INFO __main__ — 
+Publicação pulada (--no-publish).
+12:09:29 INFO __main__ — 
+============================================================
+12:09:29 INFO __main__ — PIPELINE CONCLUÍDO
+12:09:29 INFO __main__ — ============================================================
+14:11:58 INFO __main__ — ============================================================
+14:11:58 INFO __main__ — PIPELINE INICIADO — São Carlos e Região
+14:11:58 INFO __main__ — ============================================================
+14:11:58 INFO __main__ — 
+[1/5] Carregando clientes do TOTVS...
+14:11:58 INFO src.ingestion.loader — Lendo CSV: \\192.168.0.226\pdi\in\full\totvs_cliente.csv
+14:12:03 INFO src.ingestion.loader —   63,233 clientes no CSV total.
+14:12:03 INFO src.ingestion.loader —   60 clientes disponíveis na região.
+14:12:03 INFO src.ingestion.loader —   Colunas: ['cod_cliente', 'nome_cliente', 'limite_disp', 'lat_totvs', 'lng_totvs', 'endereco', 'bairro', 'cep', 'cod_ibge', 'telefone', 'cnpj', 'fonte']
+14:12:03 INFO __main__ — 
+[2/5] Geocodificando clientes...
+14:12:03 INFO src.geocoding.geocoder — Coordenada TOTVS válida: 45 | Precisam geocodificar: 15
+14:12:03 INFO src.geocoding.geocoder — Já no checkpoint: 542 | Novos para API: 0
+14:12:03 INFO src.geocoding.geocoder — Cobertura final: 60/60 (100.0%)
+14:12:03 INFO __main__ — 
+[3/5] Enriquecendo com histórico de faturamento...
+14:12:13 INFO src.enrichment.historico — Faturamento NF carregado: 25,353 clientes.
+14:12:13 INFO src.enrichment.historico — Enriquecimento: 1 com faturamento | 59 sem faturamento
+14:12:13 INFO __main__ — 
+[4/5] Carregando prospects da Receita Federal...
+14:12:14 INFO src.enrichment.prospects — Prospects São Carlos: 2,068 com coordenada
+14:12:14 INFO __main__ — 
+[5/5] Gerando HTMLs (criptografar=False)...
+14:12:14 INFO src.mapping.builder — Gerando master_sc.html...
+14:12:16 INFO src.mapping.builder — ✅ master_sc.html
+14:12:16 INFO src.mapping.builder — Gerando vendedor_sc.html...
+14:12:18 INFO src.mapping.builder — ✅ vendedor_sc.html
+14:12:18 INFO src.mapping.builder — 
+📁 HTMLs em: C:\Users\accrisci\Desktop\Artur\Projetos\Projeto_19_Mapa_Clientes_Sao_Carlos\data\output
+14:12:18 INFO __main__ — 
+Publicação pulada (--no-publish).
+14:12:18 INFO __main__ — 
+============================================================
+14:12:18 INFO __main__ — PIPELINE CONCLUÍDO
+14:12:18 INFO __main__ — ============================================================
+14:49:56 INFO __main__ — ============================================================
+14:49:56 INFO __main__ — PIPELINE INICIADO — São Carlos e Região
+14:49:56 INFO __main__ — ============================================================
+14:49:56 INFO __main__ — 
+[1/5] Carregando clientes do TOTVS...
+14:49:56 INFO src.ingestion.loader — Lendo CSV: \\192.168.0.226\pdi\in\full\totvs_cliente.csv
+14:50:03 INFO src.ingestion.loader —   63,233 clientes no CSV total.
+14:50:03 INFO src.ingestion.loader —   60 clientes disponíveis na região.
+14:50:03 INFO src.ingestion.loader —   Colunas: ['cod_cliente', 'nome_cliente', 'limite_disp', 'lat_totvs', 'lng_totvs', 'endereco', 'bairro', 'cep', 'cod_ibge', 'telefone', 'cnpj', 'fonte']
+14:50:03 INFO __main__ — 
+[2/5] Geocodificando clientes...
+14:50:03 INFO src.geocoding.geocoder — Coordenada TOTVS válida na região: 41 | Precisam geocodificar: 19
+14:50:04 INFO src.geocoding.geocoder — Já no checkpoint: 542 | Novos para API: 4
+14:50:05 INFO src.geocoding.geocoder —   Progresso: 4/4 | ETA: 0.0min
+14:50:05 INFO src.geocoding.geocoder — Cobertura final: 60/60 (100.0%)
+14:50:05 INFO __main__ — 
+[3/5] Enriquecendo com histórico de faturamento...
+14:50:15 INFO src.enrichment.historico — Faturamento NF carregado: 25,353 clientes.
+14:50:15 INFO src.enrichment.historico — Enriquecimento: 1 com faturamento | 59 sem faturamento
+14:50:15 INFO __main__ — 
+[4/5] Carregando prospects da Receita Federal...
+14:50:16 INFO src.enrichment.prospects — Prospects São Carlos: 2,068 com coordenada
+14:50:16 INFO __main__ — 
+[5/5] Gerando HTMLs (criptografar=False)...
+14:50:16 INFO src.mapping.builder — Gerando master_sc.html...
+14:50:18 INFO src.mapping.builder — ✅ master_sc.html
+14:50:18 INFO src.mapping.builder — Gerando vendedor_sc.html...
+14:50:21 INFO src.mapping.builder — ✅ vendedor_sc.html
+14:50:21 INFO src.mapping.builder — 
+📁 HTMLs em: C:\Users\accrisci\Desktop\Artur\Projetos\Projeto_19_Mapa_Clientes_Sao_Carlos\data\output
+14:50:21 INFO __main__ — 
+Publicação pulada (--no-publish).
+14:50:21 INFO __main__ — 
+============================================================
+14:50:21 INFO __main__ — PIPELINE CONCLUÍDO
+14:50:21 INFO __main__ — ============================================================
+15:02:41 INFO __main__ — ============================================================
+15:02:41 INFO __main__ — PIPELINE INICIADO — São Carlos e Região
+15:02:41 INFO __main__ — ============================================================
+15:02:41 INFO __main__ — 
+[1/5] Carregando clientes do TOTVS...
+15:02:41 INFO src.ingestion.loader — Lendo CSV: \\192.168.0.226\pdi\in\full\totvs_cliente.csv
+15:02:45 INFO src.ingestion.loader —   63,233 clientes no CSV total.
+15:02:45 INFO src.ingestion.loader —   60 clientes disponíveis na região.
+15:02:45 INFO src.ingestion.loader —   Colunas: ['cod_cliente', 'nome_cliente', 'limite_disp', 'lat_totvs', 'lng_totvs', 'endereco', 'bairro', 'cep', 'cod_ibge', 'telefone', 'cnpj', 'fonte']
+15:02:45 INFO __main__ — 
+[2/5] Geocodificando clientes...
+15:02:45 INFO src.geocoding.geocoder — Coordenada TOTVS válida na região: 41 | Precisam geocodificar: 19
+15:02:45 INFO src.geocoding.geocoder — Já no checkpoint: 543 | Novos para API: 3
+15:02:46 INFO src.geocoding.geocoder —   Progresso: 3/3 | ETA: 0.0min
+15:02:46 INFO src.geocoding.geocoder — Cobertura final: 60/60 (100.0%)
+15:02:46 INFO __main__ — 
+[3/5] Enriquecendo com histórico de faturamento...
+15:02:57 INFO src.enrichment.historico — Faturamento NF carregado: 25,353 clientes.
+15:02:57 INFO src.enrichment.historico — Enriquecimento: 1 com faturamento | 59 sem faturamento
+15:02:57 INFO __main__ — 
+[4/5] Carregando prospects da Receita Federal...
+15:02:58 INFO src.enrichment.prospects — Prospects São Carlos: 2,068 com coordenada
+15:02:58 INFO __main__ — 
+[5/5] Gerando HTMLs (criptografar=False)...
+15:02:58 INFO src.mapping.builder — Gerando master_sc.html...
+15:03:02 INFO src.mapping.builder — ✅ master_sc.html
+15:03:02 INFO src.mapping.builder — Gerando vendedor_sc.html...
+15:03:06 INFO src.mapping.builder — ✅ vendedor_sc.html
+15:03:06 INFO src.mapping.builder — 
+📁 HTMLs em: C:\Users\accrisci\Desktop\Artur\Projetos\Projeto_19_Mapa_Clientes_Sao_Carlos\data\output
+15:03:06 INFO __main__ — 
+Publicação pulada (--no-publish).
+15:03:06 INFO __main__ — 
+============================================================
+15:03:06 INFO __main__ — PIPELINE CONCLUÍDO
+15:03:06 INFO __main__ — ============================================================
+15:29:40 INFO __main__ — ============================================================
+15:29:40 INFO __main__ — PIPELINE INICIADO — São Carlos e Região
+15:29:40 INFO __main__ — ============================================================
+15:29:40 INFO __main__ — 
+[1/5] Carregando clientes do TOTVS...
+15:29:40 INFO src.ingestion.loader — Lendo CSV: \\192.168.0.226\pdi\in\full\totvs_cliente.csv
+15:29:44 INFO src.ingestion.loader —   63,233 clientes no CSV total.
+15:29:45 INFO src.ingestion.loader —   60 clientes disponíveis na região.
+15:29:45 INFO src.ingestion.loader —   Colunas: ['cod_cliente', 'nome_cliente', 'limite_disp', 'lat_totvs', 'lng_totvs', 'endereco', 'bairro', 'cep', 'cod_ibge', 'telefone', 'cnpj', 'fonte']
+15:29:45 INFO __main__ — 
+[2/5] Geocodificando clientes...
+15:29:45 INFO src.geocoding.geocoder — Coordenada TOTVS válida na região: 41 | Precisam geocodificar: 19
+15:29:45 INFO src.geocoding.geocoder — Já no checkpoint: 546 | Novos para API: 0
+15:29:45 WARNING src.geocoding.geocoder — Removidos 5 clientes com coordenada fora da região: ['13117', '17756', '23433', '43762', '43763']
+15:29:45 INFO src.geocoding.geocoder — Cobertura final: 55/60 (91.7%)
+15:29:45 INFO __main__ — 
+[3/5] Enriquecendo com histórico de faturamento...
+15:29:54 INFO src.enrichment.historico — Faturamento NF carregado: 25,353 clientes.
+15:29:54 INFO src.enrichment.historico — Enriquecimento: 1 com faturamento | 59 sem faturamento
+15:29:54 INFO __main__ — 
+[4/5] Carregando prospects da Receita Federal...
+15:29:55 INFO src.enrichment.prospects — Prospects São Carlos: 2,068 com coordenada
+15:29:55 INFO __main__ — 
+[5/5] Gerando HTMLs (criptografar=False)...
+15:29:55 INFO src.mapping.builder — Gerando master_sc.html...
+15:29:57 INFO src.mapping.builder — ✅ master_sc.html
+15:29:57 INFO src.mapping.builder — Gerando vendedor_sc.html...
+15:29:59 INFO src.mapping.builder — ✅ vendedor_sc.html
+15:29:59 INFO src.mapping.builder — 
+📁 HTMLs em: C:\Users\accrisci\Desktop\Artur\Projetos\Projeto_19_Mapa_Clientes_Sao_Carlos\data\output
+15:29:59 INFO __main__ — 
+Publicação pulada (--no-publish).
+15:29:59 INFO __main__ — 
+============================================================
+15:29:59 INFO __main__ — PIPELINE CONCLUÍDO
+15:29:59 INFO __main__ — ============================================================
+15:45:19 INFO __main__ — ============================================================
+15:45:19 INFO __main__ — PIPELINE INICIADO — São Carlos e Região
+15:45:19 INFO __main__ — ============================================================
+15:45:19 INFO __main__ — 
+[1/5] Carregando clientes do TOTVS...
+15:45:19 INFO src.ingestion.loader — Lendo CSV: \\192.168.0.226\pdi\in\full\totvs_cliente.csv
+15:45:24 INFO src.ingestion.loader —   63,233 clientes no CSV total.
+15:45:24 INFO src.ingestion.loader —   60 clientes disponíveis na região.
+15:45:24 INFO src.ingestion.loader —   Colunas: ['cod_cliente', 'nome_cliente', 'limite_disp', 'lat_totvs', 'lng_totvs', 'endereco', 'bairro', 'cep', 'cod_ibge', 'telefone', 'cnpj', 'fonte']
+15:45:24 INFO __main__ — 
+[2/5] Geocodificando clientes...
+15:45:24 INFO src.geocoding.geocoder — Coordenada TOTVS válida na região: 42 | Precisam geocodificar: 18
+15:45:24 INFO src.geocoding.geocoder — Já no checkpoint: 546 | Novos para API: 0
+15:45:25 WARNING src.geocoding.geocoder — Removidos 2 clientes com coordenada fora da região: ['17756', '23433']
+15:45:25 INFO src.geocoding.geocoder — Cobertura final: 58/60 (96.7%)
+15:45:25 INFO __main__ — 
+[3/5] Enriquecendo com histórico de faturamento...
+15:45:34 INFO src.enrichment.historico — Faturamento NF carregado: 25,353 clientes.
+15:45:34 INFO src.enrichment.historico — Enriquecimento: 1 com faturamento | 59 sem faturamento
+15:45:34 INFO __main__ — 
+[4/5] Carregando prospects da Receita Federal...
+15:45:34 INFO src.enrichment.prospects — Prospects São Carlos: 2,068 com coordenada
+15:45:34 INFO __main__ — 
+[5/5] Gerando HTMLs (criptografar=False)...
+15:45:34 INFO src.mapping.builder — Gerando master_sc.html...
+15:45:38 INFO src.mapping.builder — ✅ master_sc.html
+15:45:38 INFO src.mapping.builder — Gerando vendedor_sc.html...
+15:45:43 INFO src.mapping.builder — ✅ vendedor_sc.html
+15:45:43 INFO src.mapping.builder — 
+📁 HTMLs em: C:\Users\accrisci\Desktop\Artur\Projetos\Projeto_19_Mapa_Clientes_Sao_Carlos\data\output
+15:45:43 INFO __main__ — 
+Publicação pulada (--no-publish).
+15:45:43 INFO __main__ — 
+============================================================
+15:45:43 INFO __main__ — PIPELINE CONCLUÍDO
+15:45:43 INFO __main__ — ============================================================
+16:50:49 INFO __main__ — ============================================================
+16:50:49 INFO __main__ — PIPELINE INICIADO — São Carlos e Região
+16:50:49 INFO __main__ — ============================================================
+16:50:49 INFO __main__ — 
+[1/5] Carregando clientes do TOTVS...
+16:50:49 INFO src.ingestion.loader — Lendo CSV: \\192.168.0.226\pdi\in\full\totvs_cliente.csv
+16:50:53 INFO src.ingestion.loader —   63,233 clientes no CSV total.
+16:50:53 INFO src.ingestion.loader —   60 clientes disponíveis na região.
+16:50:53 INFO src.ingestion.loader —   Colunas: ['cod_cliente', 'nome_cliente', 'limite_disp', 'lat_totvs', 'lng_totvs', 'endereco', 'bairro', 'cep', 'cod_ibge', 'telefone', 'cnpj', 'fonte']
+16:50:53 INFO __main__ — 
+[2/5] Geocodificando clientes...
+16:50:53 INFO src.geocoding.geocoder — Coordenada TOTVS válida na região: 42 | Precisam geocodificar: 18
+16:50:53 INFO src.geocoding.geocoder — Já no checkpoint: 546 | Novos para API: 0
+16:50:54 WARNING src.geocoding.geocoder — Removidos 2 clientes com coordenada fora da região: ['17756', '23433']
+16:50:54 INFO src.geocoding.geocoder — Cobertura final: 58/60 (96.7%)
+16:50:54 INFO __main__ — 
+[3/5] Enriquecendo com histórico de faturamento...
+16:51:03 INFO src.enrichment.historico — Faturamento NF carregado: 25,353 clientes.
+16:51:03 INFO src.enrichment.historico — Enriquecimento: 1 com faturamento | 59 sem faturamento
+16:51:03 INFO __main__ — 
+[4/5] Carregando prospects da Receita Federal...
+16:51:03 INFO src.enrichment.prospects — Prospects São Carlos: 909 com coordenada
+16:51:03 INFO __main__ — 
+[5/5] Gerando HTMLs (criptografar=False)...
+16:51:03 INFO src.mapping.builder — Gerando master_sc.html...
+16:51:04 INFO src.mapping.builder — ✅ master_sc.html
+16:51:04 INFO src.mapping.builder — Gerando vendedor_sc.html...
+16:51:06 INFO src.mapping.builder — ✅ vendedor_sc.html
+16:51:06 INFO src.mapping.builder — 
+📁 HTMLs em: C:\Users\accrisci\Desktop\Artur\Projetos\Projeto_19_Mapa_Clientes_Sao_Carlos\data\output
+16:51:06 INFO __main__ — 
+Publicação pulada (--no-publish).
+16:51:06 INFO __main__ — 
+============================================================
+16:51:06 INFO __main__ — PIPELINE CONCLUÍDO
+16:51:06 INFO __main__ — ============================================================
