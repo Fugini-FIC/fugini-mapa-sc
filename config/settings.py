@@ -36,9 +36,16 @@ GITHUB_REPO  = os.getenv("GITHUB_REPO",  "dadaset/fugini-mapa-sc")
 IBGE_ALVO = [
     3548906,  # São Carlos
     3503208,  # Araraquara
-    3519600,  # Ibaté
+    3519055,  # Ibaté
     3523404,  # Itirapina
 ]
+
+IBGE_CIDADE = {
+    3548906: "São Carlos",
+    3503208: "Araraquara",
+    3519055: "Ibaté",
+    3523404: "Itirapina",
+}
 
 NOME_REGIAO = "São Carlos e Região"
 

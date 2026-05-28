@@ -54,7 +54,7 @@ def _build_cliente_dict(row) -> dict:
         "lng":           float(row["lng_final"]),
         "nome":          _safe_str(row.get("nome_cliente"),   "N/D"),
         "cod":           _safe_str(row.get("cod_cliente"),    "N/D"),
-        "cidade":        _safe_str(row.get("nome_municipio"), "N/D"),
+        "cidade":        _safe_str(row.get("cidade"), "N/D"),
         "endereco":      _safe_str(row.get("endereco"),       "-"),
         "bairro":        _safe_str(row.get("bairro"),         "-"),
         "cep":           _safe_str(row.get("cep"),            "-"),
