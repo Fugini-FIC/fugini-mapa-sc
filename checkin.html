@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Check-in Fugini</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    }
+    .logo {
+      background: #D2001B;
+      color: white;
+      text-align: center;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      letter-spacing: 1px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 4px;
+      margin-top: 14px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    textarea { resize: vertical; min-height: 80px; }
+    .geo-status {
+      font-size: 12px;
+      color: #888;
+      margin-top: 6px;
+    }
+    .geo-status.ok { color: #27ae60; }
+    .geo-status.err { color: #e74c3c; }
+    button {
+      width: 100%;
+      margin-top: 20px;
+      padding: 14px;
+      background: #D2001B;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+    .msg {
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      text-align: center;
+      display: none;
+    }
+    .msg.ok { background: #eafaf1; color: #1e8449; display: block; }
+    .msg.err { background: #fdecea; color: #c0392b; display: block; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">FUGINI — CHECK-IN</div>
+
+  <label>Cód. Vendedor</label>
+  <input type="text" id="cod_vendedor" placeholder="Ex: V001" />
+
+  <label>Cód. Cliente</label>
+  <input type="text" id="cod_cliente" placeholder="Ex: 00001" />
+
+  <label>Nome Cliente</label>
+  <input type="text" id="nome_cliente" placeholder="Ex: Mercado Silva Ltda" />
+
+  <label>Status da Visita</label>
+  <select id="status_visita">
+    <option value="realizada">Realizada</option>
+    <option value="ausente">Ausente</option>
+    <option value="reagendada">Reagendada</option>
+  </select>
+
+  <label>Observação</label>
+  <textarea id="observacao" placeholder="Opcional..."></textarea>
+
+  <div class="geo-status" id="geo-status">Aguardando localização...</div>
+
+  <button id="btn-enviar" disabled>Registrar Check-in</button>
+  <div class="msg" id="msg"></div>
+</div>
+
+<script>
+  const API_URL = 'https://fugini-checkin-api.vercel.app/api/checkin';
+  let lat = null, lng = null;
+
+  // Geolocation
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        lat = pos.coords.latitude;
+        lng = pos.coords.longitude;
+        document.getElementById('geo-status').textContent = `📍 Localização capturada (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
+        document.getElementById('geo-status').className = 'geo-status ok';
+        document.getElementById('btn-enviar').disabled = false;
+      },
+      err => {
+        document.getElementById('geo-status').textContent = '❌ Não foi possível obter localização. Verifique as permissões.';
+        document.getElementById('geo-status').className = 'geo-status err';
+      }
+    );
+  } else {
+    document.getElementById('geo-status').textContent = '❌ Geolocalização não suportada neste dispositivo.';
+    document.getElementById('geo-status').className = 'geo-status err';
+  }
+
+  // Envio
+  document.getElementById('btn-enviar').addEventListener('click', async () => {
+    const cod_vendedor = document.getElementById('cod_vendedor').value.trim();
+    const cod_cliente  = document.getElementById('cod_cliente').value.trim();
+    const nome_cliente = document.getElementById('nome_cliente').value.trim();
+    const status_visita = document.getElementById('status_visita').value;
+    const observacao   = document.getElementById('observacao').value.trim();
+    const msg = document.getElementById('msg');
+
+    if (!cod_vendedor || !cod_cliente || !nome_cliente) {
+      msg.className = 'msg err';
+      msg.textContent = 'Preencha Cód. Vendedor, Cód. Cliente e Nome Cliente.';
+      return;
+    }
+
+    document.getElementById('btn-enviar').disabled = true;
+    document.getElementById('btn-enviar').textContent = 'Enviando...';
+    msg.className = 'msg';
+
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cod_vendedor, cod_cliente, nome_cliente, lat_vendedor: lat, lng_vendedor: lng, status_visita, observacao })
+      });
+
+      if (res.ok) {
+        msg.className = 'msg ok';
+        msg.textContent = '✅ Check-in registrado com sucesso!';
+        document.getElementById('cod_cliente').value = '';
+        document.getElementById('nome_cliente').value = '';
+        document.getElementById('observacao').value = '';
+      } else {
+        const err = await res.json();
+        msg.className = 'msg err';
+        msg.textContent = '❌ Erro: ' + (err.error || 'Tente novamente.');
+      }
+    } catch(e) {
+      msg.className = 'msg err';
+      msg.textContent = '❌ Falha de conexão. Verifique sua internet.';
+    }
+
+    document.getElementById('btn-enviar').disabled = false;
+    document.getElementById('btn-enviar').textContent = 'Registrar Check-in';
+  });
+</script>
+</body>
+</html>
