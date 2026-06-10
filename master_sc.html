@@ -42,10 +42,10 @@
       return arr;
     }
 
-    async function descriptografar() {
-      const senha = document.getElementById('senha').value.trim();
+    async function descriptografar(senhaAuto) {
+      const senha = (senhaAuto !== undefined ? senhaAuto : document.getElementById('senha').value).trim();
       const erro  = document.getElementById('erro');
-      erro.style.display = 'none';
+      if (erro) erro.style.display = 'none';
       try {
         const enc    = new TextEncoder();
         const keyMat = await crypto.subtle.importKey("raw", enc.encode(senha), "PBKDF2", false, ["deriveKey"]);
@@ -55,11 +55,23 @@
         );
         const dec  = await crypto.subtle.decrypt({ name: "AES-CBC", iv: b64ToBytes(IV_B64) }, chave, b64ToBytes(CONTEUDO_B64));
         const html = new TextDecoder().decode(dec);
+        history.replaceState(null, '', window.location.pathname);
         document.open(); document.write(html); document.close();
-      } catch(e) { erro.style.display = 'block'; }
+        return true;
+      } catch(e) {
+        if (erro) erro.style.display = 'block';
+        return false;
+      }
     }
 
     document.getElementById('senha').addEventListener('keydown', e => { if (e.key === 'Enter') descriptografar(); });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (window.location.hash && window.location.hash.length > 1) {
+        const senhaHash = decodeURIComponent(window.location.hash.substring(1));
+        descriptografar(senhaHash);
+      }
+    });
   </script>
 </body>
 </html>
