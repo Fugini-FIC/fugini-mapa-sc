@@ -47,13 +47,17 @@
       font-size: 15px;
       font-family: 'Segoe UI', sans-serif;
     }
+    input:read-only {
+      background: #f9f9f9;
+      color: #888;
+    }
     textarea { resize: vertical; min-height: 80px; }
     .geo-status {
       font-size: 12px;
       color: #888;
       margin-top: 6px;
     }
-    .geo-status.ok { color: #27ae60; }
+    .geo-status.ok  { color: #27ae60; }
     .geo-status.err { color: #e74c3c; }
     button {
       width: 100%;
@@ -68,6 +72,21 @@
       cursor: pointer;
     }
     button:disabled { background: #aaa; cursor: not-allowed; }
+    .btn-voltar {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      background: white;
+      color: #D2001B;
+      border: 1.5px solid #D2001B;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+    }
     .msg {
       margin-top: 14px;
       padding: 12px;
@@ -76,7 +95,7 @@
       text-align: center;
       display: none;
     }
-    .msg.ok { background: #eafaf1; color: #1e8449; display: block; }
+    .msg.ok  { background: #eafaf1; color: #1e8449; display: block; }
     .msg.err { background: #fdecea; color: #c0392b; display: block; }
   </style>
 </head>
@@ -106,6 +125,7 @@
   <div class="geo-status" id="geo-status">Aguardando localização...</div>
 
   <button id="btn-enviar" disabled>Registrar Check-in</button>
+  <a href="painel.html" class="btn-voltar">← Voltar ao Painel</a>
   <div class="msg" id="msg"></div>
 </div>
 
@@ -113,34 +133,54 @@
   const API_URL = 'https://fugini-checkin-api.vercel.app/api/checkin';
   let lat = null, lng = null;
 
+  // Preenche campos a partir dos parâmetros da URL (quando vem do mapa)
+  (function preencherDaURL() {
+    const params = new URLSearchParams(window.location.search);
+    const cod    = params.get('cod_cliente');
+    const nome   = params.get('nome_cliente');
+    if (cod) {
+      const el = document.getElementById('cod_cliente');
+      el.value = cod;
+      el.readOnly = true;
+    }
+    if (nome) {
+      const el = document.getElementById('nome_cliente');
+      el.value = decodeURIComponent(nome);
+      el.readOnly = true;
+    }
+  })();
+
   // Geolocation
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
       pos => {
         lat = pos.coords.latitude;
         lng = pos.coords.longitude;
-        document.getElementById('geo-status').textContent = `📍 Localização capturada (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
+        document.getElementById('geo-status').textContent =
+          `📍 Localização capturada (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
         document.getElementById('geo-status').className = 'geo-status ok';
         document.getElementById('btn-enviar').disabled = false;
       },
       err => {
-        document.getElementById('geo-status').textContent = '❌ Não foi possível obter localização. Verifique as permissões.';
+        document.getElementById('geo-status').textContent =
+          '❌ Não foi possível obter localização. Verifique as permissões.';
         document.getElementById('geo-status').className = 'geo-status err';
       }
     );
   } else {
-    document.getElementById('geo-status').textContent = '❌ Geolocalização não suportada neste dispositivo.';
+    document.getElementById('geo-status').textContent =
+      '❌ Geolocalização não suportada neste dispositivo.';
     document.getElementById('geo-status').className = 'geo-status err';
   }
 
   // Envio
   document.getElementById('btn-enviar').addEventListener('click', async () => {
-    const cod_vendedor = document.getElementById('cod_vendedor').value.trim();
-    const cod_cliente  = document.getElementById('cod_cliente').value.trim();
-    const nome_cliente = document.getElementById('nome_cliente').value.trim();
+    const cod_vendedor  = document.getElementById('cod_vendedor').value.trim();
+    const cod_cliente   = document.getElementById('cod_cliente').value.trim();
+    const nome_cliente  = document.getElementById('nome_cliente').value.trim();
     const status_visita = document.getElementById('status_visita').value;
-    const observacao   = document.getElementById('observacao').value.trim();
-    const msg = document.getElementById('msg');
+    const observacao    = document.getElementById('observacao').value.trim();
+    const msg           = document.getElementById('msg');
 
     if (!cod_vendedor || !cod_cliente || !nome_cliente) {
       msg.className = 'msg err';
@@ -156,14 +196,21 @@
       const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cod_vendedor, cod_cliente, nome_cliente, lat_vendedor: lat, lng_vendedor: lng, status_visita, observacao })
+        body: JSON.stringify({
+          cod_vendedor, cod_cliente, nome_cliente,
+          lat_vendedor: lat, lng_vendedor: lng,
+          status_visita, observacao
+        })
       });
 
       if (res.ok) {
         msg.className = 'msg ok';
         msg.textContent = '✅ Check-in registrado com sucesso!';
-        document.getElementById('cod_cliente').value = '';
-        document.getElementById('nome_cliente').value = '';
+        // Limpa só os campos editáveis
+        if (!document.getElementById('cod_cliente').readOnly)
+          document.getElementById('cod_cliente').value = '';
+        if (!document.getElementById('nome_cliente').readOnly)
+          document.getElementById('nome_cliente').value = '';
         document.getElementById('observacao').value = '';
       } else {
         const err = await res.json();
