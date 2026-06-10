@@ -6,7 +6,7 @@
   <style>
     body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5;
            display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    .card { background: white; border-radius: 12px; padding: 40px;
+    .card { display: none; background: white; border-radius: 12px; padding: 40px;
              width: 100%; max-width: 340px; box-shadow: 0 4px 24px rgba(0,0,0,0.10); }
     h2 { color: #1a1a2e; font-size: 20px; margin-bottom: 4px; }
     p  { color: #888; font-size: 13px; margin-bottom: 20px; }
@@ -70,6 +70,8 @@
       if (window.location.hash && window.location.hash.length > 1) {
         const senhaHash = decodeURIComponent(window.location.hash.substring(1));
         descriptografar(senhaHash);
+      } else {
+        document.querySelector('.card').style.display = 'block';
       }
     });
   </script>
