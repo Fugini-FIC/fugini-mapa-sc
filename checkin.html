@@ -32,6 +32,17 @@
       margin-bottom: 20px;
       letter-spacing: 1px;
     }
+    .badge-agendamento {
+      background: #ebf5fb;
+      color: #2874a6;
+      font-size: 12px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      text-align: center;
+      margin-bottom: 12px;
+      display: none;
+    }
+    .badge-agendamento.visivel { display: block; }
     label {
       display: block;
       font-size: 13px;
@@ -103,6 +114,10 @@
 <div class="card">
   <div class="logo">FUGINI — CHECK-IN</div>
 
+  <div class="badge-agendamento" id="badge-agendamento">
+    📅 Check-in vinculado a agendamento
+  </div>
+
   <label>Cód. Vendedor</label>
   <input type="text" id="cod_vendedor" placeholder="Ex: V001" />
 
@@ -130,14 +145,17 @@
 </div>
 
 <script>
-  const API_URL = 'https://fugini-checkin-api.vercel.app/api/checkin';
+  const API_BASE = 'https://fugini-checkin-api.vercel.app/api';
   let lat = null, lng = null;
+  let agendamentoId = null;
 
-  // Preenche campos a partir dos parâmetros da URL (quando vem do mapa)
+  // Preenche campos a partir dos parâmetros da URL (quando vem do mapa ou agenda)
   (function preencherDaURL() {
     const params = new URLSearchParams(window.location.search);
     const cod    = params.get('cod_cliente');
     const nome   = params.get('nome_cliente');
+    const agId   = params.get('agendamento_id');
+
     if (cod) {
       const el = document.getElementById('cod_cliente');
       el.value = cod;
@@ -147,6 +165,16 @@
       const el = document.getElementById('nome_cliente');
       el.value = decodeURIComponent(nome);
       el.readOnly = true;
+    }
+    if (agId) {
+      agendamentoId = agId;
+      document.getElementById('badge-agendamento').classList.add('visivel');
+    }
+
+    // Pré-preenche cod_vendedor do localStorage (vindo da agenda)
+    const codVendedorSalvo = localStorage.getItem('cod_vendedor');
+    if (codVendedorSalvo) {
+      document.getElementById('cod_vendedor').value = codVendedorSalvo;
     }
   })();
 
@@ -193,7 +221,8 @@
     msg.className = 'msg';
 
     try {
-      const res = await fetch(API_URL, {
+      // 1) POST do check-in
+      const res = await fetch(`${API_BASE}/checkin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -203,23 +232,44 @@
         })
       });
 
-      if (res.ok) {
-        msg.className = 'msg ok';
-        msg.textContent = '✅ Check-in registrado com sucesso!';
-        // Limpa só os campos editáveis
-        if (!document.getElementById('cod_cliente').readOnly)
-          document.getElementById('cod_cliente').value = '';
-        if (!document.getElementById('nome_cliente').readOnly)
-          document.getElementById('nome_cliente').value = '';
-        document.getElementById('observacao').value = '';
-      } else {
-        const err = await res.json();
-        msg.className = 'msg err';
-        msg.textContent = '❌ Erro: ' + (err.error || 'Tente novamente.');
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Erro ao registrar check-in.');
       }
+
+      // 2) Se vier de agendamento, faz PATCH para atualizar status
+      let agendamentoAtualizado = false;
+      if (agendamentoId) {
+        try {
+          const patchRes = await fetch(`${API_BASE}/agendamentos?id=${agendamentoId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: status_visita })
+          });
+          agendamentoAtualizado = patchRes.ok;
+        } catch (e) {
+          // Check-in foi salvo; só o PATCH falhou. Não bloqueia.
+          console.warn('Falha ao atualizar agendamento:', e);
+        }
+      }
+
+      msg.className = 'msg ok';
+      msg.textContent = agendamentoId
+        ? (agendamentoAtualizado
+            ? '✅ Check-in registrado e agendamento atualizado!'
+            : '✅ Check-in registrado. (Falha ao atualizar agendamento — verifique na agenda.)')
+        : '✅ Check-in registrado com sucesso!';
+
+      // Limpa só os campos editáveis
+      if (!document.getElementById('cod_cliente').readOnly)
+        document.getElementById('cod_cliente').value = '';
+      if (!document.getElementById('nome_cliente').readOnly)
+        document.getElementById('nome_cliente').value = '';
+      document.getElementById('observacao').value = '';
+
     } catch(e) {
       msg.className = 'msg err';
-      msg.textContent = '❌ Falha de conexão. Verifique sua internet.';
+      msg.textContent = '❌ ' + (e.message || 'Falha de conexão. Verifique sua internet.');
     }
 
     document.getElementById('btn-enviar').disabled = false;
