@@ -7,7 +7,7 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 
-load_dotenv(Path(__file__).parent / ".env")
+load_dotenv(Path(__file__).parent.parent / ".env", override=False)
 
 # ============================================================
 # GOOGLE MAPS
@@ -28,7 +28,7 @@ PG_PASSWORD = os.getenv("PG_PASSWORD", "Postgres2025")
 # GITHUB
 # ============================================================
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
-GITHUB_REPO  = os.getenv("GITHUB_REPO",  "dadaset/fugini-mapa-sc")
+GITHUB_REPO  = os.getenv("GITHUB_REPO", "Fugini-FIC/fugini-mapa-sc")
 
 # ============================================================
 # REGIÃO — São Carlos e entorno

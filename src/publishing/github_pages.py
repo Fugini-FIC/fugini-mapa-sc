@@ -1,13 +1,15 @@
 # ============================================================
 # src/publishing/github_pages.py
-# Publica os HTMLs no GitHub Pages via API.
+# Publica os HTMLs no GitHub Pages via git push direto.
 # ============================================================
 
-import base64
 import logging
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
-from github import Github
-from config.settings import GITHUB_TOKEN, GITHUB_REPO, USUARIOS_MAPA
+
+from config.settings import GITHUB_TOKEN, GITHUB_REPO
 
 logger = logging.getLogger(__name__)
 
@@ -16,48 +18,47 @@ ARQUIVOS   = ["master_sc.html", "vendedor_sc.html"]
 
 
 def publicar() -> str:
-    logger.info(f"Conectando ao GitHub: {GITHUB_REPO}")
-    g    = Github(GITHUB_TOKEN)
-    repo = g.get_repo(GITHUB_REPO)
+    logger.info(f"Publicando via git push: {GITHUB_REPO}")
 
-    try:
-        branch = repo.get_branch("gh-pages")
-        logger.info("Branch 'gh-pages' encontrado.")
-    except Exception:
-        repo.create_git_ref("refs/heads/gh-pages", repo.get_branch("main").commit.sha)
-        logger.info("Branch 'gh-pages' criado.")
+    repo_url = f"https://{GITHUB_TOKEN}@github.com/{GITHUB_REPO}.git"
 
-    for nome_arquivo in ARQUIVOS:
-        path_local = OUTPUT_DIR / nome_arquivo
-        if not path_local.exists():
-            logger.warning(f"  Arquivo não encontrado: {nome_arquivo}")
-            continue
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir)
 
-        conteudo = path_local.read_bytes()
-        tamanho  = len(conteudo) / 1024
-        logger.info(f"  Publicando {nome_arquivo} ({tamanho:.1f} KB)...")
+        # Clona só o branch gh-pages (shallow)
+        subprocess.run(
+            ["git", "clone", "--branch", "gh-pages", "--single-branch", "--depth", "1", repo_url, str(tmp)],
+            check=True, capture_output=True
+        )
 
-        conteudo_b64 = base64.b64encode(conteudo).decode("utf-8")
+        # Copia os HTMLs para o clone
+        for nome in ARQUIVOS:
+            src = OUTPUT_DIR / nome
+            if not src.exists():
+                logger.warning(f"  Arquivo não encontrado: {nome}")
+                continue
+            shutil.copy2(src, tmp / nome)
+            logger.info(f"  Copiado: {nome} ({src.stat().st_size / 1024:.1f} KB)")
 
-        try:
-            existente = repo.get_contents(nome_arquivo, ref="gh-pages")
-            repo.update_file(
-                nome_arquivo,
-                f"update: {nome_arquivo}",
-                conteudo_b64,
-                existente.sha,
-                branch="gh-pages",
+        # Commit e push
+        subprocess.run(["git", "config", "user.email", "pipeline@fugini.com.br"], cwd=tmp, check=True)
+        subprocess.run(["git", "config", "user.name",  "Fugini Pipeline"],         cwd=tmp, check=True)
+        subprocess.run(["git", "add", "."],                                         cwd=tmp, check=True)
+
+        # Só commita e faz push se houver mudanças
+        status = subprocess.run(["git", "status", "--porcelain"], cwd=tmp, capture_output=True, text=True)
+        if status.stdout.strip():
+            subprocess.run(["git", "commit", "-m", "update: mapas São Carlos"], cwd=tmp, check=True)
+            result = subprocess.run(
+                ["git", "push", "origin", "gh-pages"],
+                cwd=tmp, capture_output=True, text=True
             )
-        except Exception:
-            repo.create_file(
-                nome_arquivo,
-                f"add: {nome_arquivo}",
-                conteudo_b64,
-                branch="gh-pages",
-            )
+            if result.returncode != 0:
+                logger.error(f"Push falhou:\n{result.stderr}")
+                raise RuntimeError(f"git push falhou: {result.stderr}")
+        else:
+            logger.info("  Sem alterações — nada a publicar.")
 
-        logger.info(f"  ✅ {nome_arquivo} atualizado")
-
-    url = f"https://dadaset.github.io/fugini-mapa-sc/"
+    url = f"https://fugini-fic.github.io/fugini-mapa-sc/"
     logger.info(f"\n🌐 Publicado em: {url}")
     return url

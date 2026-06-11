@@ -1,0 +1,20 @@
+10:22:16 INFO — ============================================================
+10:22:16 INFO — SYNC SUPABASE — São Carlos
+10:22:16 INFO — ============================================================
+10:22:17 INFO — Lendo CSV: \\192.168.0.226\pdi\in\full\totvs_cliente.csv
+10:22:21 INFO —   63,395 clientes no CSV total.
+10:22:21 INFO —   Após filtros: 199 clientes (57 disponíveis)
+10:22:21 INFO — Carregando coordenadas do checkpoint...
+10:22:22 INFO —   546 coordenadas no checkpoint.
+10:22:22 INFO — Carregando histórico de faturamento...
+10:22:26 INFO —   25,404 clientes com faturamento.
+10:22:26 INFO — Fazendo upsert de clientes no Supabase...
+10:22:27 INFO — HTTP Request: POST https://pyiybinbsnouxdtnfcpe.supabase.co/rest/v1/clientes?on_conflict=cod_cliente&columns=%22limite_disp%22%2C%22lat_final%22%2C%22cidade%22%2C%22ultima_compra%22%2C%22bairro%22%2C%22lng_final%22%2C%22cep%22%2C%22endereco%22%2C%22tipo_cliente%22%2C%22total_faturado%22%2C%22fonte%22%2C%22cod_ibge%22%2C%22cnpj%22%2C%22status_compra%22%2C%22cod_cliente%22%2C%22dias_sem_compra%22%2C%22nome_cliente%22%2C%22updated_at%22%2C%22telefone%22 "HTTP/2 201 Created"
+10:22:27 INFO —   Upsert: 199/199
+10:22:27 INFO —   Clientes sincronizados: 199
+10:22:27 INFO — Sincronizando carteira do Johnny (V001)...
+10:22:27 INFO — HTTP Request: GET https://pyiybinbsnouxdtnfcpe.supabase.co/rest/v1/carteira?select=cod_cliente&cod_vendedor=eq.V001 "HTTP/2 200 OK"
+10:22:27 INFO — HTTP Request: POST https://pyiybinbsnouxdtnfcpe.supabase.co/rest/v1/carteira?columns=%22ativo%22%2C%22cod_vendedor%22%2C%22cod_cliente%22 "HTTP/2 201 Created"
+10:22:27 INFO —   57 novos clientes adicionados à carteira do Johnny.
+10:22:27 INFO — 
+✅ Sync concluído.
