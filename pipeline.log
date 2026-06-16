@@ -2317,3 +2317,97 @@ Publicando no GitHub Pages...
 ============================================================
 14:51:40 INFO __main__ — PIPELINE CONCLUÍDO
 14:51:40 INFO __main__ — ============================================================
+15:52:04 INFO __main__ — ============================================================
+15:52:04 INFO __main__ — PIPELINE INICIADO — São Carlos e Região
+15:52:04 INFO __main__ — ============================================================
+15:52:04 INFO __main__ — 
+[1/5] Carregando clientes do TOTVS...
+15:52:04 INFO src.ingestion.loader — Lendo CSV: \\192.168.0.226\pdi\in\full\totvs_cliente.csv
+15:52:10 INFO src.ingestion.loader —   63,446 clientes no CSV total.
+15:52:10 INFO src.ingestion.loader —   Disponíveis (15): ['12247', '16239', '19220', '23433', '23793', '32913', '32915', '32916', '32918', '32919', '41253', '46779', '54243', '6877', '8819']
+15:52:10 INFO src.ingestion.loader —   Carteira vendedor SC (cod-erc=6003): 46
+15:52:10 INFO src.ingestion.loader —   Total carregado: 46 clientes
+15:52:10 INFO __main__ — 
+[2/5] Geocodificando clientes...
+15:52:10 INFO src.geocoding.geocoder — Coordenada TOTVS válida na região: 29 | Precisam geocodificar: 17
+15:52:10 INFO src.geocoding.geocoder — Já no checkpoint: 622 | Novos para API: 0
+15:52:10 WARNING src.geocoding.geocoder — Removidos 1 clientes com coordenada fora da região: ['17756']
+15:52:10 INFO src.geocoding.geocoder — Cobertura final: 45/46 (97.8%)
+15:52:10 INFO __main__ — 
+[3/5] Enriquecendo com histórico de faturamento...
+15:52:24 INFO src.enrichment.historico — Faturamento NF carregado: 25,446 clientes.
+15:52:24 INFO src.enrichment.historico — Enriquecimento: 0 com faturamento | 46 sem faturamento
+15:52:24 INFO src.enrichment.historico — Status compra — ativos: 0 | inativos 60+d: 0 | nunca compraram: 46
+15:52:24 INFO __main__ — 
+[4/5] Carregando prospects da Receita Federal...
+15:52:25 INFO src.enrichment.prospects — Prospects São Carlos: 915 com coordenada
+15:52:25 INFO __main__ — 
+[5/5] Gerando HTMLs (criptografar=True)...
+15:52:25 INFO src.mapping.builder — Gerando master_sc.html (perfil=master)...
+15:52:27 INFO src.mapping.builder —   Criptografado: master_sc.html
+15:52:27 INFO src.mapping.builder — ✅ master_sc.html
+15:52:27 INFO src.mapping.builder — Gerando vendedor_sc.html (perfil=vendedor)...
+15:52:29 INFO src.mapping.builder —   Criptografado: vendedor_sc.html
+15:52:29 INFO src.mapping.builder — ✅ vendedor_sc.html
+15:52:29 INFO src.mapping.builder — 
+📁 HTMLs em: C:\Users\accrisci\Desktop\Artur\Projetos\Projeto_19_Mapa_Clientes_Sao_Carlos\data\output
+15:52:29 INFO __main__ — 
+Publicando no GitHub Pages...
+15:52:29 INFO src.publishing.github_pages — Publicando via git push: Fugini-FIC/fugini-mapa-sc
+15:52:31 INFO src.publishing.github_pages —   Copiado: master_sc.html (3507.5 KB)
+15:52:31 INFO src.publishing.github_pages —   Copiado: vendedor_sc.html (3528.2 KB)
+15:52:31 INFO src.publishing.github_pages —   Copiado: checkin.html (8.4 KB)
+15:52:36 INFO src.publishing.github_pages — 
+🌐 Publicado em: https://fugini-fic.github.io/fugini-mapa-sc/
+15:52:36 INFO __main__ — 🌐 https://fugini-fic.github.io/fugini-mapa-sc/
+15:52:36 INFO __main__ — 
+============================================================
+15:52:36 INFO __main__ — PIPELINE CONCLUÍDO
+15:52:36 INFO __main__ — ============================================================
+16:18:31 INFO __main__ — ============================================================
+16:18:31 INFO __main__ — PIPELINE INICIADO — São Carlos e Região
+16:18:31 INFO __main__ — ============================================================
+16:18:31 INFO __main__ — 
+[1/5] Carregando clientes do TOTVS...
+16:18:31 INFO src.ingestion.loader — Lendo CSV: \\192.168.0.226\pdi\in\full\totvs_cliente.csv
+16:18:37 INFO src.ingestion.loader —   63,446 clientes no CSV total.
+16:18:37 INFO src.ingestion.loader —   Disponíveis (15): ['12247', '16239', '19220', '23433', '23793', '32913', '32915', '32916', '32918', '32919', '41253', '46779', '54243', '6877', '8819']
+16:18:37 INFO src.ingestion.loader —   Carteira vendedor SC (cod-erc=6003): 46
+16:18:37 INFO src.ingestion.loader —   Total carregado: 46 clientes
+16:18:37 INFO __main__ — 
+[2/5] Geocodificando clientes...
+16:18:37 INFO src.geocoding.geocoder — Coordenada TOTVS válida na região: 29 | Precisam geocodificar: 17
+16:18:37 INFO src.geocoding.geocoder — Já no checkpoint: 622 | Novos para API: 0
+16:18:37 WARNING src.geocoding.geocoder — Removidos 1 clientes com coordenada fora da região: ['17756']
+16:18:37 INFO src.geocoding.geocoder — Cobertura final: 45/46 (97.8%)
+16:18:37 INFO __main__ — 
+[3/5] Enriquecendo com histórico de faturamento...
+16:18:51 INFO src.enrichment.historico — Faturamento NF carregado: 25,446 clientes.
+16:18:51 INFO src.enrichment.historico — Enriquecimento: 0 com faturamento | 46 sem faturamento
+16:18:51 INFO src.enrichment.historico — Status compra — ativos: 0 | inativos 60+d: 0 | nunca compraram: 46
+16:18:51 INFO __main__ — 
+[4/5] Carregando prospects da Receita Federal...
+16:18:52 INFO src.enrichment.prospects — Prospects São Carlos: 915 com coordenada
+16:18:52 INFO __main__ — 
+[5/5] Gerando HTMLs (criptografar=True)...
+16:18:52 INFO src.mapping.builder — Gerando master_sc.html (perfil=master)...
+16:18:54 INFO src.mapping.builder —   Criptografado: master_sc.html
+16:18:54 INFO src.mapping.builder — ✅ master_sc.html
+16:18:54 INFO src.mapping.builder — Gerando vendedor_sc.html (perfil=vendedor)...
+16:18:55 INFO src.mapping.builder —   Criptografado: vendedor_sc.html
+16:18:55 INFO src.mapping.builder — ✅ vendedor_sc.html
+16:18:55 INFO src.mapping.builder — 
+📁 HTMLs em: C:\Users\accrisci\Desktop\Artur\Projetos\Projeto_19_Mapa_Clientes_Sao_Carlos\data\output
+16:18:55 INFO __main__ — 
+Publicando no GitHub Pages...
+16:18:55 INFO src.publishing.github_pages — Publicando via git push: Fugini-FIC/fugini-mapa-sc
+16:18:59 INFO src.publishing.github_pages —   Copiado: master_sc.html (3510.1 KB)
+16:18:59 INFO src.publishing.github_pages —   Copiado: vendedor_sc.html (3530.8 KB)
+16:18:59 INFO src.publishing.github_pages —   Copiado: checkin.html (8.4 KB)
+16:19:04 INFO src.publishing.github_pages — 
+🌐 Publicado em: https://fugini-fic.github.io/fugini-mapa-sc/
+16:19:04 INFO __main__ — 🌐 https://fugini-fic.github.io/fugini-mapa-sc/
+16:19:04 INFO __main__ — 
+============================================================
+16:19:04 INFO __main__ — PIPELINE CONCLUÍDO
+16:19:04 INFO __main__ — ============================================================

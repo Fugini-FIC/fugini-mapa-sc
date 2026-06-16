@@ -298,7 +298,9 @@ def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
     # ── Clientes com representante — renderiza sempre, mas só aparece no painel do master ──
     for status in ["ativo", "inativo", "nunca_comprou"]:
         label = LABEL_STATUS[status]
-        fg = folium.FeatureGroup(name=label, show=False)
+        # Vendedor: nunca_comprou visível por padrão (é a carteira dele)
+        show_default = (perfil == "vendedor" and status == "nunca_comprou")
+        fg = folium.FeatureGroup(name=label, show=show_default)
         df_status = df[df["status_compra"] == status] if "status_compra" in df.columns else pd.DataFrame()
         count = 0
         for _, row in df_status.iterrows():
@@ -615,8 +617,9 @@ def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
         font-family: 'Segoe UI', Arial, sans-serif;
         max-height: calc(90vh - 64px);
         display: flex; flex-direction: column;
+        transition: width 0.2s;
     ">
-      <!-- Abas -->
+      <!-- Abas + botão colapsar -->
       <div style="display:flex;border-bottom:1px solid #eee;border-radius:10px 10px 0 0;overflow:hidden;">
         <button id="aba-filtros" onclick="trocarAba('filtros')" style="
             flex:1;padding:9px 0;font-size:11px;font-weight:700;border:none;cursor:pointer;
@@ -625,8 +628,13 @@ def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
         </button>
         <button id="aba-roteiro" onclick="trocarAba('roteiro')" style="
             flex:1;padding:9px 0;font-size:11px;font-weight:700;border:none;cursor:pointer;
-            background:#f5f5f5;color:#888;border-radius:0 10px 0 0;">
+            background:#f5f5f5;color:#888;">
           🗺️ Roteiro
+        </button>
+        <button onclick="togglePainel()" id="btn-colapsar" style="
+            width:28px;padding:0;font-size:13px;font-weight:700;border:none;cursor:pointer;
+            background:#eee;color:#555;border-radius:0 10px 0 0;flex-shrink:0;">
+          ‹
         </button>
       </div>
 
@@ -676,6 +684,9 @@ def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
       var roteiro = document.getElementById('conteudo-roteiro');
       var btnFiltros = document.getElementById('aba-filtros');
       var btnRoteiro = document.getElementById('aba-roteiro');
+      // Se estiver colapsado, expande primeiro
+      var painel = document.getElementById('painel-unificado');
+      if (painel.dataset.colapsado === 'true') togglePainel();
       if (aba === 'filtros') {{
         filtros.style.display = 'block';
         roteiro.style.display = 'none';
@@ -690,6 +701,37 @@ def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
         btnRoteiro.style.color = 'white';
         btnFiltros.style.background = '#f5f5f5';
         btnFiltros.style.color = '#888';
+      }}
+    }}
+
+    function togglePainel() {{
+      var painel   = document.getElementById('painel-unificado');
+      var conteudoFiltros = document.getElementById('conteudo-filtros');
+      var conteudoRoteiro = document.getElementById('conteudo-roteiro');
+      var abas     = document.querySelectorAll('#painel-unificado > div:first-child button:not(#btn-colapsar)');
+      var btn      = document.getElementById('btn-colapsar');
+      var colapsado = painel.dataset.colapsado === 'true';
+
+      if (colapsado) {{
+        // Expande
+        painel.style.width = '245px';
+        abas.forEach(function(b) {{ b.style.display = ''; }});
+        // Mostra o conteúdo que estava ativo
+        var abaAtiva = painel.dataset.abaAtiva || 'filtros';
+        if (abaAtiva === 'filtros') {{ conteudoFiltros.style.display = 'block'; conteudoRoteiro.style.display = 'none'; }}
+        else {{ conteudoFiltros.style.display = 'none'; conteudoRoteiro.style.display = 'block'; }}
+        btn.textContent = '‹';
+        painel.dataset.colapsado = 'false';
+      }} else {{
+        // Colapsa — guarda qual aba estava ativa
+        var abaAtiva = conteudoRoteiro.style.display === 'block' ? 'roteiro' : 'filtros';
+        painel.dataset.abaAtiva = abaAtiva;
+        painel.style.width = '32px';
+        abas.forEach(function(b) {{ b.style.display = 'none'; }});
+        conteudoFiltros.style.display = 'none';
+        conteudoRoteiro.style.display = 'none';
+        btn.textContent = '›';
+        painel.dataset.colapsado = 'true';
       }}
     }}
     </script>"""
