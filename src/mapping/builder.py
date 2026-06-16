@@ -436,9 +436,28 @@ def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
     cor_disp       = COR_STATUS["disponivel"]
     label_disp     = LABEL_STATUS["disponivel"]
 
-    # Seção COM REPRESENTANTE — só aparece para master
+    # Seção COM REPRESENTANTE
+    # Master: mostra ativo, inativo, nunca_comprou
+    # Vendedor: mostra só nunca_comprou (carteira dele), marcado por padrão
     com_dono_html = ""
-    if perfil == "master":
+    if perfil == "vendedor":
+        cor   = COR_STATUS["nunca_comprou"]
+        label = LABEL_STATUS["nunca_comprou"]
+        n     = contagens.get("nunca_comprou", 0)
+        com_dono_html = f"""
+      <div style="font-size:11px;font-weight:700;color:#444;margin-bottom:6px;">
+        👥 CARTEIRA ({n})
+      </div>
+      <label style="display:flex;align-items:center;cursor:pointer;gap:6px;margin-bottom:5px;">
+        <input type="checkbox" checked
+               onchange="toggleLayer('{label}', this.checked)"
+               style="width:13px;height:13px;cursor:pointer;accent-color:{cor['border']};">
+        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;
+                     background:{cor['fill']};border:1.5px solid {cor['border']};flex-shrink:0;"></span>
+        <span style="font-size:11px;color:#333;">Clientes da carteira <b>({n})</b></span>
+      </label>
+      <div style="border-top:1px solid #eee;margin-top:8px;padding-top:8px;"></div>"""
+    elif perfil == "master":
         linhas = ""
         for status in ["ativo", "inativo", "nunca_comprou"]:
             cor   = COR_STATUS[status]
@@ -482,11 +501,29 @@ def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
           </label>"""
         prospects_html = f"""
         <div style="border-top:1px solid #eee;margin-top:8px;padding-top:8px;">
-          <div style="font-size:11px;font-weight:700;color:#888;margin-bottom:6px;">
-            🎯 PROSPECÇÃO ({len(df_prospects):,})
+          <div onclick="toggleProspects()" style="font-size:11px;font-weight:700;color:#888;
+               margin-bottom:6px;cursor:pointer;display:flex;align-items:center;
+               justify-content:space-between;user-select:none;">
+            <span>🎯 PROSPECÇÃO ({len(df_prospects):,})</span>
+            <span id="prospect-arrow" style="font-size:10px;">▶</span>
           </div>
-          {linhas_cnae}
-        </div>"""
+          <div id="lista-cnaes" style="display:none;">
+            {linhas_cnae}
+          </div>
+        </div>
+        <script>
+        function toggleProspects() {{
+          var lista = document.getElementById('lista-cnaes');
+          var arrow = document.getElementById('prospect-arrow');
+          if (lista.style.display === 'none') {{
+            lista.style.display = 'block';
+            arrow.textContent = '▼';
+          }} else {{
+            lista.style.display = 'none';
+            arrow.textContent = '▶';
+          }}
+        }}
+        </script>"""
 
     botao_exportar = _botao_exportar_html()
 
@@ -549,9 +586,117 @@ def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
     }}
     </script>"""
 
-    mapa.get_root().html.add_child(folium.Element(painel_html))
+    navbar_html, conteudo_roteiro_html = gerar_roteamento_html(df_roteamento, df_prospects)
+
+    # Seção disponíveis — só aparece no master
+    if perfil == "master":
+        disp_html = f"""
+        <div style="font-size:11px;font-weight:700;color:#2980b9;margin-bottom:6px;">
+          🔵 DISPONÍVEIS ({n_disp})
+        </div>
+        <label style="display:flex;align-items:center;cursor:pointer;gap:6px;margin-bottom:5px;">
+          <input type="checkbox" checked
+                 onchange="toggleLayer('{label_disp}', this.checked)"
+                 style="width:13px;height:13px;cursor:pointer;accent-color:{cor_disp['border']};">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;
+                       background:{cor_disp['fill']};border:1.5px solid {cor_disp['border']};flex-shrink:0;"></span>
+          <span style="font-size:11px;color:#333;">Sem representante <b>({n_disp})</b></span>
+        </label>"""
+    else:
+        disp_html = ""
+
+    # Painel unificado com abas (Filtros | Roteiro)
+    painel_abas_html = f"""
+    <div id="painel-unificado" style="
+        position: fixed; top: 54px; left: 10px; z-index: 1000;
+        background: rgba(255,255,255,0.97); border-radius: 10px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+        width: 245px;
+        font-family: 'Segoe UI', Arial, sans-serif;
+        max-height: calc(90vh - 64px);
+        display: flex; flex-direction: column;
+    ">
+      <!-- Abas -->
+      <div style="display:flex;border-bottom:1px solid #eee;border-radius:10px 10px 0 0;overflow:hidden;">
+        <button id="aba-filtros" onclick="trocarAba('filtros')" style="
+            flex:1;padding:9px 0;font-size:11px;font-weight:700;border:none;cursor:pointer;
+            background:#D2001B;color:white;border-radius:10px 0 0 0;">
+          📊 Filtros
+        </button>
+        <button id="aba-roteiro" onclick="trocarAba('roteiro')" style="
+            flex:1;padding:9px 0;font-size:11px;font-weight:700;border:none;cursor:pointer;
+            background:#f5f5f5;color:#888;border-radius:0 10px 0 0;">
+          🗺️ Roteiro
+        </button>
+      </div>
+
+      <!-- Conteúdo Filtros -->
+      <div id="conteudo-filtros" style="padding:14px 16px;overflow-y:auto;max-height:calc(90vh - 110px);">
+        <div style="font-size:12px;font-weight:700;color:#e74c3c;margin-bottom:10px;">
+          📊 {NOME_REGIAO.upper()}
+        </div>
+        {com_dono_html}
+        {disp_html}
+        <div style="border-top:1px solid #eee;margin-top:8px;padding-top:8px;">
+          <label style="display:flex;align-items:center;cursor:pointer;gap:6px;">
+            <input type="checkbox"
+                   onchange="toggleLayer('Heatmap Crédito', this.checked)"
+                   style="width:13px;height:13px;cursor:pointer;">
+            <span style="font-size:11px;color:#555;">🔥 Heatmap Crédito</span>
+          </label>
+          <div style="padding-left:20px;font-size:10px;color:#888;margin-top:2px;">
+            {cred_fmt} disponível
+          </div>
+        </div>
+        {prospects_html}
+        {botao_exportar}
+      </div>
+
+      <!-- Conteúdo Roteiro -->
+      <div id="conteudo-roteiro" style="padding:14px 16px;overflow-y:auto;max-height:calc(90vh - 110px);display:none;">
+        {conteudo_roteiro_html}
+      </div>
+    </div>
+
+    <script>
+    window.CLIENTES_EXPORT = {export_data_js};
+
+    function toggleLayer(layerName, visible) {{
+      var labels = document.querySelectorAll('.leaflet-control-layers-overlays label');
+      labels.forEach(function(label) {{
+        if (label.textContent.trim() === layerName) {{
+          var checkbox = label.querySelector('input');
+          if (checkbox && checkbox.checked !== visible) checkbox.click();
+        }}
+      }});
+    }}
+
+    function trocarAba(aba) {{
+      var filtros = document.getElementById('conteudo-filtros');
+      var roteiro = document.getElementById('conteudo-roteiro');
+      var btnFiltros = document.getElementById('aba-filtros');
+      var btnRoteiro = document.getElementById('aba-roteiro');
+      if (aba === 'filtros') {{
+        filtros.style.display = 'block';
+        roteiro.style.display = 'none';
+        btnFiltros.style.background = '#D2001B';
+        btnFiltros.style.color = 'white';
+        btnRoteiro.style.background = '#f5f5f5';
+        btnRoteiro.style.color = '#888';
+      }} else {{
+        filtros.style.display = 'none';
+        roteiro.style.display = 'block';
+        btnRoteiro.style.background = '#2980b9';
+        btnRoteiro.style.color = 'white';
+        btnFiltros.style.background = '#f5f5f5';
+        btnFiltros.style.color = '#888';
+      }}
+    }}
+    </script>"""
+
+    mapa.get_root().html.add_child(folium.Element(navbar_html))
+    mapa.get_root().html.add_child(folium.Element(painel_abas_html))
     folium.LayerControl(collapsed=False).add_to(mapa)
-    mapa.get_root().html.add_child(folium.Element(gerar_roteamento_html(df_roteamento)))
 
     return mapa
 
@@ -578,12 +723,14 @@ def exportar_mapas(df: pd.DataFrame, criptografar: bool = True, df_prospects: pd
         slug    = arquivo.replace(".html", "")
         perfil  = "vendedor" if usuario == "vendedor_sc" else "master"
 
-        # Vendedor recebe só disponíveis no df principal também
-        df_mapa = df_disponiveis if perfil == "vendedor" else df
+        # Vendedor recebe sua carteira completa (df já vem filtrado pelo loader)
+        df_mapa = df
 
         logger.info(f"Gerando {arquivo} (perfil={perfil})...")
+        # Roteamento: master usa disponíveis, vendedor usa sua carteira
+        df_rot = df_disponiveis if perfil == "master" else df_mapa
         mapa = montar_mapa(df_mapa, df_prospects=df_prospects,
-                           df_roteamento=df_disponiveis, perfil=perfil)
+                           df_roteamento=df_rot, perfil=perfil)
         _salvar_html(mapa, OUTPUT_DIR / f"_{slug}_raw.html", OUTPUT_DIR / arquivo, senha, criptografar)
         arquivos[usuario] = OUTPUT_DIR / arquivo
         logger.info(f"✅ {arquivo}")

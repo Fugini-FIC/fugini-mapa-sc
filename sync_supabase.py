@@ -1,7 +1,7 @@
 """
 sync_supabase.py
 Sincroniza clientes da região de São Carlos para o Supabase (tabela clientes).
-Popula também a carteira do Johnny (V001) com os clientes disponíveis.
+Popula também a carteira do Johnny (SC01) com os clientes disponíveis.
 
 Roda via Task Scheduler ou manualmente:
     python sync_supabase.py
@@ -57,7 +57,7 @@ NOMERC_VALIDOS   = {"DISPONIVEL - FS", ""}
 NOMERC_EXCLUIDOS = {"EXPORTAÇÃO", "CLIENTE PLATAFORMA"}
 DIAS_INATIVO     = 60
 
-COD_VENDEDOR_JOHNNY = "V001"
+COD_VENDEDOR_JOHNNY = "SC01"
 
 
 # ── Step 1: Carrega e filtra TOTVS ────────────────────────────────────────────
@@ -85,7 +85,6 @@ def carregar_totvs() -> pd.DataFrame:
 
     df_final = pd.concat([df_disp, df_outros], ignore_index=True)
 
-    # Renomeia colunas
     df_final = df_final.rename(columns={
         "cod-cliente":  "cod_cliente",
         "nome-cliente": "nome_cliente",
@@ -222,7 +221,6 @@ def upsert_clientes(df: pd.DataFrame, supabase: Client):
             "updated_at":      datetime.utcnow().isoformat(),
         })
 
-    # Upsert em lotes de 500
     BATCH = 500
     total = 0
     for i in range(0, len(registros), BATCH):
@@ -234,19 +232,17 @@ def upsert_clientes(df: pd.DataFrame, supabase: Client):
     logger.info(f"  Clientes sincronizados: {len(registros)}")
 
 
-# ── Step 6: Popula carteira do Johnny ─────────────────────────────────────────
+# ── Step 6: Sincroniza carteira do Johnny ─────────────────────────────────────
 
 def sincronizar_carteira(df: pd.DataFrame, supabase: Client):
-    logger.info("Sincronizando carteira do Johnny (V001)...")
+    logger.info(f"Sincronizando carteira do Johnny ({COD_VENDEDOR_JOHNNY})...")
 
     df_disp = df[df["tipo_cliente"] == "disponivel"].copy()
     cods_johnny = set(df_disp["cod_cliente"].astype(str))
 
-    # Pega carteira atual do Johnny no Supabase
     res = supabase.table("carteira").select("cod_cliente").eq("cod_vendedor", COD_VENDEDOR_JOHNNY).execute()
     cods_existentes = {r["cod_cliente"] for r in res.data}
 
-    # Inserir novos
     novos = cods_johnny - cods_existentes
     if novos:
         registros = [
@@ -256,7 +252,6 @@ def sincronizar_carteira(df: pd.DataFrame, supabase: Client):
         supabase.table("carteira").insert(registros).execute()
         logger.info(f"  {len(novos)} novos clientes adicionados à carteira do Johnny.")
 
-    # Desativar clientes que saíram
     saiu = cods_existentes - cods_johnny
     if saiu:
         for c in saiu:
@@ -287,7 +282,6 @@ def main():
     df_coords = carregar_coordenadas()
     df = df.merge(df_coords, on="cod_cliente", how="left")
 
-    # Usa lat_totvs como fallback se não tiver no checkpoint
     import numpy as np
     df["lat_totvs"] = pd.to_numeric(df.get("lat_totvs"), errors="coerce")
     df["lng_totvs"] = pd.to_numeric(df.get("lng_totvs"), errors="coerce")

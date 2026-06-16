@@ -61,17 +61,55 @@ def _build_cliente_dict(row) -> dict:
         "ultimo_produto": _safe_str(row.get("ultimo_produto"), "-"),
         "ultima_qt":      _safe_float(row.get("ultima_qt_pedida")),
         "total_faturado": _safe_float(row.get("total_faturado")),
+        "tipo":           "cliente",
     }
 
 
-def gerar_roteamento_html(df_area: pd.DataFrame) -> str:
+def _build_prospect_dict(row) -> dict:
+    nome = _safe_str(row.get("razao_social") or row.get("nome_fantasia"), "N/D")
+    return {
+        "lat":            float(row["lat_final"]),
+        "lng":            float(row["lng_final"]),
+        "nome":           nome,
+        "cod":            _safe_str(row.get("cnpj"), "-"),
+        "cidade":         _safe_str(row.get("municipio"), "N/D"),
+        "endereco":       f"{_safe_str(row.get('logradouro'))} {_safe_str(row.get('numero'))}".strip(),
+        "bairro":         _safe_str(row.get("bairro"), "-"),
+        "cep":            _safe_str(row.get("cep"), "-"),
+        "telefone":       "-",
+        "cnpj":           _safe_str(row.get("cnpj"), "-"),
+        "credito":        0.0,
+        "ultima_compra":  "-",
+        "ultimo_produto": "-",
+        "ultima_qt":      0.0,
+        "total_faturado": 0.0,
+        "tipo":           "prospect",
+    }
+
+
+def gerar_roteamento_html(df_area: pd.DataFrame, df_prospects: pd.DataFrame | None = None) -> tuple[str, str]:
+    """
+    Retorna (navbar_html, conteudo_roteiro_html).
+    - navbar_html: barra superior fixa com logo e links
+    - conteudo_roteiro_html: HTML interno do painel de roteiro (sem container externo),
+      para ser injetado pelo builder.py como aba do painel unificado
+    """
     clientes_js = json.dumps([
         _build_cliente_dict(row)
         for _, row in df_area.iterrows()
         if pd.notna(row["lat_final"]) and pd.notna(row["lng_final"])
     ], ensure_ascii=False)
 
-    return """
+    if df_prospects is not None and not df_prospects.empty:
+        prospects_js = json.dumps([
+            _build_prospect_dict(row)
+            for _, row in df_prospects.iterrows()
+            if pd.notna(row.get("lat_final")) and pd.notna(row.get("lng_final"))
+        ], ensure_ascii=False)
+    else:
+        prospects_js = "[]"
+
+    navbar_html = """
     <!-- NAV SUPERIOR -->
     <div style="
         position: fixed; top: 0; left: 0; right: 0; z-index: 2000;
@@ -81,18 +119,21 @@ def gerar_roteamento_html(df_area: pd.DataFrame) -> str:
         font-family: 'Segoe UI', Arial, sans-serif;
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     ">
-      <div style="font-size:14px;font-weight:700;letter-spacing:1px;">
-        FUGINI<span style="color:#D2001B;">.</span>CRM
-      </div>
+      <a href="https://fugini-checkin-api.vercel.app/painel"
+         style="text-decoration:none;color:white;">
+        <div style="font-size:14px;font-weight:700;letter-spacing:1px;">
+          FUGINI<span style="color:#D2001B;">.</span>CRM
+        </div>
+      </a>
       <div style="display:flex;gap:8px;">
-        <a href="painel.html"
+        <a href="https://fugini-checkin-api.vercel.app/painel"
            style="font-size:12px;color:#aaa;text-decoration:none;padding:6px 10px;
                   border-radius:6px;transition:background 0.15s;"
            onmouseover="this.style.background='rgba(255,255,255,0.1)'"
            onmouseout="this.style.background='transparent'">
           🏠 Painel
         </a>
-        <a href="agenda.html"
+        <a href="https://fugini-checkin-api.vercel.app/agenda"
            style="font-size:12px;color:#aaa;text-decoration:none;padding:6px 10px;
                   border-radius:6px;transition:background 0.15s;"
            onmouseover="this.style.background='rgba(255,255,255,0.1)'"
@@ -102,21 +143,9 @@ def gerar_roteamento_html(df_area: pd.DataFrame) -> str:
       </div>
     </div>
 
-    <!-- PAINEL DE ROTEAMENTO -->
-    <div id="painel-rota" style="
-        position: fixed;
-        bottom: 10px;
-        right: 10px;
-        z-index: 1000;
-        background: rgba(255,255,255,0.97);
-        border-radius: 10px;
-        padding: 14px 16px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-        min-width: 200px;
-        max-width: 230px;
-        font-family: 'Segoe UI', Arial, sans-serif;
-        border-left: 4px solid #2980b9;
-    ">
+    """
+
+    conteudo_roteiro_html = """
       <div style="font-size:12px;font-weight:700;color:#2980b9;margin-bottom:8px;">
         🗺️ ROTEIRO
       </div>
@@ -132,6 +161,26 @@ def gerar_roteamento_html(df_area: pd.DataFrame) -> str:
       <input id="rota-data-inicio" type="date"
              style="width:100%;padding:6px 8px;border:1.5px solid #ddd;border-radius:6px;
                     font-size:11px;margin-bottom:6px;box-sizing:border-box;outline:none;">
+
+      <div style="display:flex;gap:6px;margin-bottom:4px;">
+        <div style="flex:1;">
+          <label style="font-size:9px;color:#888;display:block;margin-bottom:2px;">Clientes/dia</label>
+          <input id="rota-n-clientes" type="number" min="0" value="4"
+                 oninput="atualizarSomaDia()"
+                 style="width:100%;padding:6px 8px;border:1.5px solid #ddd;border-radius:6px;
+                        font-size:11px;box-sizing:border-box;outline:none;">
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:9px;color:#888;display:block;margin-bottom:2px;">Prospects/dia</label>
+          <input id="rota-n-prospects" type="number" min="0" value="2"
+                 oninput="atualizarSomaDia()"
+                 style="width:100%;padding:6px 8px;border:1.5px solid #ddd;border-radius:6px;
+                        font-size:11px;box-sizing:border-box;outline:none;">
+        </div>
+      </div>
+      <div id="rota-soma-dia" style="font-size:10px;color:#888;margin-bottom:6px;text-align:center;">
+        6 clientes por dia
+      </div>
 
       <button onclick="calcularRota()"
               style="width:100%;padding:7px;background:#2980b9;color:white;border:none;
@@ -158,6 +207,7 @@ def gerar_roteamento_html(df_area: pd.DataFrame) -> str:
 
     <script>
     var CLIENTES = """ + clientes_js + """;
+    var PROSPECTS = """ + prospects_js + """;
     var CORES_DIAS = ['#e74c3c','#2980b9','#27ae60','#8e44ad','#f39c12','#16a085','#c0392b'];
     var rotaLayers = [];
     var layersPorDia = {};
@@ -168,7 +218,14 @@ def gerar_roteamento_html(df_area: pd.DataFrame) -> str:
       if (salvo) document.getElementById('rota-cod-vendedor').value = salvo;
       var hoje = new Date().toISOString().split('T')[0];
       document.getElementById('rota-data-inicio').value = hoje;
+      atualizarSomaDia();
     })();
+
+    function atualizarSomaDia() {
+      var nc = parseInt(document.getElementById('rota-n-clientes').value) || 0;
+      var np = parseInt(document.getElementById('rota-n-prospects').value) || 0;
+      document.getElementById('rota-soma-dia').textContent = (nc + np) + ' clientes por dia';
+    }
 
     function haversineKm(lat1, lng1, lat2, lng2) {
       var R = 6371;
@@ -195,19 +252,44 @@ def gerar_roteamento_html(df_area: pd.DataFrame) -> str:
       return rota;
     }
 
-    function agruparDias(rota, porDia) {
+    // Pega os N elementos mais próximos de (lat, lng), removendo-os da lista original
+    function pegarMaisProximos(lista, n, lat, lng) {
+      if (n <= 0 || lista.length === 0) return [];
+      var comDist = lista.map(function(c) {
+        return { item: c, dist: haversineKm(lat, lng, c.lat, c.lng) };
+      });
+      comDist.sort(function(a, b) { return a.dist - b.dist; });
+      var selecionados = comDist.slice(0, n).map(function(c) { return c.item; });
+      selecionados.forEach(function(sel) {
+        var idx = lista.indexOf(sel);
+        if (idx !== -1) lista.splice(idx, 1);
+      });
+      return selecionados;
+    }
+
+    // Monta o roteiro dia a dia: todo dia parte de casa (latP, lngP) e volta
+    // para casa no fim do dia (ciclo fechado). A cada dia, pega N clientes +
+    // M prospects mais próximos de casa ainda não utilizados, e otimiza o
+    // deslocamento dentro do dia com nearest-neighbor a partir de casa.
+    // Como pegarMaisProximos remove os itens usados, dias sucessivos avançam
+    // radialmente para pontos cada vez mais distantes de casa.
+    function montarRoteiroDiario(clientes, prospects, nCli, nPro, latP, lngP) {
+      var clientesRestantes  = clientes.slice();
+      var prospectsRestantes = prospects.slice();
       var dias = [];
-      for (var i = 0; i < rota.length; i += porDia) dias.push(rota.slice(i, i+porDia));
-      if (dias.length > 1 && dias[dias.length-1].length === 1) {
-        var ultimo = dias.pop()[0];
-        var melhorDia = 0, melhorDist = Infinity;
-        dias.forEach(function(dia, idx) {
-          var ult = dia[dia.length-1];
-          var d = haversineKm(ult.lat, ult.lng, ultimo.lat, ultimo.lng);
-          if (d < melhorDist) { melhorDist = d; melhorDia = idx; }
-        });
-        dias[melhorDia].push(ultimo);
+      var MAX_DIAS = 60; // proteção contra loop infinito
+
+      while ((clientesRestantes.length > 0 || prospectsRestantes.length > 0) && dias.length < MAX_DIAS) {
+        var poolClientes  = pegarMaisProximos(clientesRestantes,  nCli, latP, lngP);
+        var poolProspects = pegarMaisProximos(prospectsRestantes, nPro, latP, lngP);
+        var pool = poolClientes.concat(poolProspects);
+
+        if (pool.length === 0) break; // nada mais para agendar (ex: nCli=0 e nPro=0)
+
+        var rotaDia = nearestNeighbor(pool, latP, lngP);
+        dias.push(rotaDia);
       }
+
       return dias;
     }
 
@@ -259,26 +341,29 @@ def gerar_roteamento_html(df_area: pd.DataFrame) -> str:
       dias.forEach(function(dia, idx) {
         var cor = CORES_DIAS[idx % CORES_DIAS.length];
         layersPorDia[idx] = [];
+
+        // Ciclo fechado: casa -> pontos do dia -> casa
         var pts = [[latP, lngP]];
         dia.forEach(function(c) { pts.push([c.lat, c.lng]); });
         pts.push([latP, lngP]);
 
-        // Cria a linha mas NÃO adiciona ao mapa (desmarcado por padrão)
         var linha = L.polyline(pts, {color: cor, weight: 3, opacity: 0.8, dashArray: '6,4'});
         rotaLayers.push(linha);
         layersPorDia[idx].push(linha);
 
         dia.forEach(function(c, i) {
+          var ehProspect = c.tipo === 'prospect';
+          var corMarker = ehProspect ? '#888888' : cor;
           var icon = L.divIcon({
-            html: '<div style="background:' + cor + ';color:white;border-radius:50%;' +
+            html: '<div style="background:' + corMarker + ';color:white;border-radius:50%;' +
                   'width:20px;height:20px;display:flex;align-items:center;justify-content:center;' +
                   'font-size:10px;font-weight:700;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);">' +
                   (i+1) + '</div>',
             iconSize: [20,20], iconAnchor: [10,10], className: ''
           });
-          // Cria o marcador mas NÃO adiciona ao mapa
+          var tag = ehProspect ? ' (Prospect)' : '';
           var mk = L.marker([c.lat, c.lng], {icon: icon})
-            .bindPopup('<b>Dia ' + (idx+1) + ' - Visita ' + (i+1) + '</b><br>' + c.nome + '<br>' + c.cidade);
+            .bindPopup('<b>Dia ' + (idx+1) + ' - Visita ' + (i+1) + tag + '</b><br>' + c.nome + '<br>' + c.cidade);
           rotaLayers.push(mk);
           layersPorDia[idx].push(mk);
         });
@@ -290,8 +375,7 @@ def gerar_roteamento_html(df_area: pd.DataFrame) -> str:
               'font-size:14px;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);">🏠</div>',
         iconSize: [24,24], iconAnchor: [12,12], className: ''
       });
-      // Ponto de partida sempre visível
-      var iconPartida = L.marker([latP, lngP], {icon: iconP}).bindPopup('<b>Ponto de partida</b>');
+      var iconPartida = L.marker([latP, lngP], {icon: iconP}).bindPopup('<b>Ponto de partida (casa)</b>');
       iconPartida.addTo(getMap());
       rotaLayers.push(iconPartida);
     }
@@ -314,17 +398,26 @@ def gerar_roteamento_html(df_area: pd.DataFrame) -> str:
       return somarDiasUteis(dataInicio, idxDia);
     }
 
-    async function agendarCliente(c, dataVisita, codVendedor) {
+    async function agendarCliente(c, dataVisita, codVendedor, ordem) {
       try {
+        var obs = c.tipo === 'prospect'
+          ? 'Prospecção — Roteiro gerado pelo mapa'
+          : 'Roteiro gerado pelo mapa';
+        var endereco = c.endereco && c.endereco !== '-'
+          ? (c.endereco + (c.bairro && c.bairro !== '-' ? ', ' + c.bairro : '') +
+             (c.cidade && c.cidade !== '-' ? ' — ' + c.cidade : ''))
+          : null;
         var res = await fetch(API_AGENDAMENTOS, {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
-            cod_cliente:  c.cod,
-            nome_cliente: c.nome,
-            cod_vendedor: codVendedor,
-            data_visita:  dataVisita,
-            observacao:   'Roteiro gerado pelo mapa'
+            cod_cliente:   c.cod,
+            nome_cliente:  c.nome,
+            cod_vendedor:  codVendedor,
+            data_visita:   dataVisita,
+            observacao:    obs,
+            endereco:      endereco,
+            ordem_roteiro: ordem
           })
         });
         if (res.status === 200) return 'skipped';
@@ -347,7 +440,7 @@ def gerar_roteamento_html(df_area: pd.DataFrame) -> str:
 
       var ok = 0, skipped = 0, erro = 0;
       for (var i = 0; i < dia.length; i++) {
-        var resultado = await agendarCliente(dia[i], dataVisita, codVendedor);
+        var resultado = await agendarCliente(dia[i], dataVisita, codVendedor, i + 1);
         if (resultado === 'ok')           ok++;
         else if (resultado === 'skipped') skipped++;
         else                              erro++;
@@ -374,7 +467,7 @@ def gerar_roteamento_html(df_area: pd.DataFrame) -> str:
         var dataVisita = getDataDia(idx);
         status.innerHTML = '⏳ Agendando dia ' + (idx+1) + '/' + dias.length + '...';
         for (var i = 0; i < dias[idx].length; i++) {
-          var resultado = await agendarCliente(dias[idx][i], dataVisita, codVendedor);
+          var resultado = await agendarCliente(dias[idx][i], dataVisita, codVendedor, i + 1);
           if (resultado === 'ok')           totalOk++;
           else if (resultado === 'skipped') totalSkipped++;
           else                              totalErro++;
@@ -392,7 +485,6 @@ def gerar_roteamento_html(df_area: pd.DataFrame) -> str:
       var html = '<div style="font-size:10px;color:#888;margin-bottom:6px;">' +
                  '📏 Distância estimada: ' + distTotal.toFixed(1) + ' km</div>';
 
-      // Selecionar todos os dias
       html += '<div style="margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #eee;">' +
               '<label style="display:flex;align-items:center;cursor:pointer;gap:6px;">' +
               '<input type="checkbox" id="cb-selecionar-todos-dias" ' +
@@ -412,7 +504,6 @@ def gerar_roteamento_html(df_area: pd.DataFrame) -> str:
 
         html += '<div style="margin-bottom:8px;">';
         html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">';
-        // checkbox desmarcado por padrão
         html += '<label style="display:flex;align-items:center;cursor:pointer;gap:6px;">' +
                 '<input type="checkbox" class="cb-dia" ' +
                 'onchange="toggleDia(' + idx + ', this.checked)" ' +
@@ -427,8 +518,11 @@ def gerar_roteamento_html(df_area: pd.DataFrame) -> str:
         html += '</div>';
 
         dia.forEach(function(c, i) {
+          var tagProspect = c.tipo === 'prospect'
+            ? ' <span style="color:#888;font-size:9px;">(prospect)</span>'
+            : '';
           html += '<div style="padding-left:26px;font-size:10px;color:#444;line-height:1.6;">' +
-                  (i+1) + '. ' + c.nome + '</div>';
+                  (i+1) + '. ' + c.nome + tagProspect + '</div>';
         });
         html += '</div>';
       });
@@ -440,7 +534,11 @@ def gerar_roteamento_html(df_area: pd.DataFrame) -> str:
       var endereco  = document.getElementById('endereco-partida').value.trim();
       var status    = document.getElementById('rota-status');
       var resultado = document.getElementById('rota-resultado');
+      var nCli = parseInt(document.getElementById('rota-n-clientes').value) || 0;
+      var nPro = parseInt(document.getElementById('rota-n-prospects').value) || 0;
+
       if (!endereco) { status.innerHTML = '⚠️ Digite um endereço.'; return; }
+      if (nCli === 0 && nPro === 0) { status.innerHTML = '⚠️ Defina ao menos 1 cliente ou prospect por dia.'; return; }
 
       status.innerHTML = '🔍 Geocodificando...';
       resultado.innerHTML = '';
@@ -449,17 +547,28 @@ def gerar_roteamento_html(df_area: pd.DataFrame) -> str:
       if (!partida) { status.innerHTML = '❌ Endereço não encontrado.'; return; }
 
       status.innerHTML = '⚙️ Calculando rota...';
-      var rota = nearestNeighbor(CLIENTES, partida.lat, partida.lng);
-      var dias = agruparDias(rota, 6);
+      var dias = montarRoteiroDiario(CLIENTES, PROSPECTS, nCli, nPro, partida.lat, partida.lng);
 
-      var dist = haversineKm(partida.lat, partida.lng, rota[0].lat, rota[0].lng);
-      for (var i = 0; i < rota.length-1; i++)
-        dist += haversineKm(rota[i].lat, rota[i].lng, rota[i+1].lat, rota[i+1].lng);
-      dist += haversineKm(rota[rota.length-1].lat, rota[rota.length-1].lng, partida.lat, partida.lng);
+      if (dias.length === 0) {
+        status.innerHTML = '⚠️ Nenhum cliente ou prospect disponível para roteirizar.';
+        return;
+      }
+
+      // Distância total: cada dia é um ciclo fechado casa -> pontos -> casa
+      var dist = 0;
+      dias.forEach(function(dia) {
+        dist += haversineKm(partida.lat, partida.lng, dia[0].lat, dia[0].lng);
+        for (var i = 0; i < dia.length-1; i++)
+          dist += haversineKm(dia[i].lat, dia[i].lng, dia[i+1].lat, dia[i+1].lng);
+        var ult = dia[dia.length-1];
+        dist += haversineKm(ult.lat, ult.lng, partida.lat, partida.lng);
+      });
+
+      var totalParadas = dias.reduce(function(s, d) { return s + d.length; }, 0);
 
       desenharRota(dias, partida.lat, partida.lng);
       exibirRoteiro(dias, dist);
-      status.innerHTML = '✅ ' + dias.length + ' dias | ' + rota.length + ' clientes';
+      status.innerHTML = '✅ ' + dias.length + ' dias | ' + totalParadas + ' paradas';
       window._diasRotaAtual = dias;
 
       document.getElementById('btn-exportar').style.display      = 'block';
@@ -513,3 +622,5 @@ def gerar_roteamento_html(df_area: pd.DataFrame) -> str:
       XLSX.writeFile(wb, 'roteiro.xlsx');
     }
     </script>"""
+
+    return navbar_html, conteudo_roteiro_html

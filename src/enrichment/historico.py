@@ -1,6 +1,6 @@
 # ============================================================
 # src/enrichment/historico.py
-# Enriquece clientes com faturamento NF do banco erp_progress.
+# Enriquece clientes com faturamento NF do banco fugini_dw.
 # Calcula dias_sem_compra e status_compra para colorização no mapa.
 # ============================================================
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 PG_ERP = dict(
     host="192.168.0.242",
     port=5432,
-    dbname="erp_progress",
+    dbname="fugini_dw",
     user="postgres",
     password="Postgres2025",
 )
@@ -29,9 +29,9 @@ def carregar_historico() -> pd.DataFrame:
         SELECT
             cod_cliente,
             MAX(data_emissao)              AS ultima_compra,
-            SUM(valor_item_nf)             AS total_faturado,
+            SUM(vl_bru_it)                 AS total_faturado,
             COUNT(DISTINCT nr_nota_fiscal) AS nr_notas
-        FROM faturamento_nf
+        FROM bronze.faturamento_nf
         GROUP BY cod_cliente
     ),
     ultimo_item AS (
@@ -39,11 +39,11 @@ def carregar_historico() -> pd.DataFrame:
             f.cod_cliente,
             f.cod_item   AS cod_ultimo_produto,
             f.qt_cxs_nf  AS ultima_qt_pedida
-        FROM faturamento_nf f
+        FROM bronze.faturamento_nf f
         INNER JOIN resumo r
             ON f.cod_cliente   = r.cod_cliente
             AND f.data_emissao = r.ultima_compra
-        ORDER BY f.cod_cliente, f.valor_item_nf DESC
+        ORDER BY f.cod_cliente, f.vl_bru_it DESC
     )
     SELECT
         r.cod_cliente,
@@ -54,7 +54,7 @@ def carregar_historico() -> pd.DataFrame:
         u.ultima_qt_pedida
     FROM resumo r
     LEFT JOIN ultimo_item u ON r.cod_cliente = u.cod_cliente
-    LEFT JOIN itens it      ON u.cod_ultimo_produto = it.it_codigo
+    LEFT JOIN bronze.item it ON u.cod_ultimo_produto = it.it_codigo
     """
 
     conn = psycopg2.connect(**PG_ERP)
@@ -77,14 +77,6 @@ def carregar_historico() -> pd.DataFrame:
 
 
 def calcular_status_compra(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Calcula dias_sem_compra e status_compra para cada cliente.
-
-    status_compra:
-      'ativo'        — comprou nos últimos 60 dias       → verde  (#27ae60)
-      'inativo'      — comprou há mais de 60 dias        → laranja (#e67e22)
-      'nunca_comprou'— sem registro de compra na base    → vermelho (#e74c3c)
-    """
     hoje = pd.Timestamp(date.today())
 
     df["ultima_compra"] = pd.to_datetime(df["ultima_compra"], errors="coerce")
@@ -129,8 +121,6 @@ def enriquecer_com_historico(df: pd.DataFrame) -> pd.DataFrame:
     sem_historico = len(df) - com_historico
     logger.info(f"Enriquecimento: {com_historico} com faturamento | {sem_historico} sem faturamento")
 
-    # status_compra só faz sentido para clientes com dono (tipo_cliente != 'disponivel')
-    # Disponíveis recebem status 'disponivel' e ficam fora da análise de 60 dias
     if "tipo_cliente" in df.columns:
         mask_com_dono = df["tipo_cliente"] != "disponivel"
 

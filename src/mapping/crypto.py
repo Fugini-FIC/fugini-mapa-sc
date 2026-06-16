@@ -55,15 +55,19 @@ def _template_html(conteudo_b64: str, salt_b64: str, iv_b64: str) -> str:
     button:hover {{ background: #c0392b; }}
     .erro {{ display: none; margin-top: 12px; padding: 10px; background: #fdecea;
              border-radius: 8px; color: #c0392b; font-size: 13px; text-align: center; }}
+    .carregando {{ display: none; text-align: center; color: #888; font-size: 13px; }}
   </style>
 </head>
 <body>
-  <div class="card">
+  <div class="card" id="card-login">
     <h2>Fugini Alimentos</h2>
     <p>Mapa de Clientes — São Carlos e Região</p>
     <input type="password" id="senha" placeholder="Senha" autocomplete="current-password">
     <button onclick="descriptografar()">Entrar</button>
     <div class="erro" id="erro">Senha incorreta.</div>
+  </div>
+  <div class="card carregando" id="card-carregando">
+    <p style="margin:0;">Carregando mapa...</p>
   </div>
   <script>
     const CONTEUDO_B64 = "{conteudo_b64}";
@@ -95,6 +99,17 @@ def _template_html(conteudo_b64: str, salt_b64: str, iv_b64: str) -> str:
     }}
 
     document.getElementById('senha').addEventListener('keydown', e => {{ if (e.key === 'Enter') descriptografar(); }});
+
+    // Auto-login: se a URL tem #senha, usa automaticamente sem exigir digitação
+    (function() {{
+      const hash = window.location.hash.substring(1); // remove o '#'
+      if (hash) {{
+        document.getElementById('card-login').style.display = 'none';
+        document.getElementById('card-carregando').style.display = 'block';
+        document.getElementById('senha').value = decodeURIComponent(hash);
+        descriptografar();
+      }}
+    }})();
   </script>
 </body>
 </html>"""

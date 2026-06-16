@@ -1,0 +1,58 @@
+14:09:30 INFO — ============================================================
+14:09:30 INFO — REFINAMENTO DE PROSPECTS — Google Maps API
+14:09:30 INFO — ============================================================
+14:09:31 INFO — Prospects para refinar: 806
+14:09:31 INFO — DRY RUN — nenhuma alteração feita.
+14:11:03 INFO — ============================================================
+14:11:03 INFO — REFINAMENTO DE PROSPECTS — Google Maps API
+14:11:03 INFO — ============================================================
+14:11:04 INFO — Prospects para refinar: 806
+14:11:07 INFO —   Batch 1/17 | OK: 0 | Sem resultado: 50 | ETA: 0.8min
+14:11:10 INFO —   Batch 2/17 | OK: 0 | Sem resultado: 100 | ETA: 0.8min
+14:11:16 INFO —   Batch 3/17 | OK: 0 | Sem resultado: 150 | ETA: 0.9min
+14:11:19 INFO —   Batch 4/17 | OK: 0 | Sem resultado: 200 | ETA: 0.8min
+14:11:23 INFO —   Batch 5/17 | OK: 0 | Sem resultado: 250 | ETA: 0.7min
+14:11:27 INFO —   Batch 6/17 | OK: 0 | Sem resultado: 300 | ETA: 0.7min
+14:11:31 INFO —   Batch 7/17 | OK: 0 | Sem resultado: 350 | ETA: 0.6min
+14:11:35 INFO —   Batch 8/17 | OK: 0 | Sem resultado: 400 | ETA: 0.5min
+14:19:09 INFO — ============================================================
+14:19:09 INFO — REFINAMENTO DE PROSPECTS — Google Maps API
+14:19:09 INFO — ============================================================
+14:19:09 INFO — Prospects para refinar: 406
+14:19:12 INFO —   Batch 1/9 | OK: 0 | Sem resultado: 50 | ETA: 0.3min
+14:19:16 INFO —   Batch 2/9 | OK: 0 | Sem resultado: 100 | ETA: 0.3min
+14:19:20 INFO —   Batch 3/9 | OK: 0 | Sem resultado: 150 | ETA: 0.3min
+14:19:23 INFO —   Batch 4/9 | OK: 0 | Sem resultado: 200 | ETA: 0.2min
+14:19:27 INFO —   Batch 5/9 | OK: 0 | Sem resultado: 250 | ETA: 0.2min
+14:35:14 INFO — ============================================================
+14:35:14 INFO — REFINAMENTO DE PROSPECTS — Google Maps API
+14:35:14 INFO — ============================================================
+14:35:15 INFO — Prospects para refinar: 806
+14:43:14 INFO — ============================================================
+14:43:14 INFO — REFINAMENTO DE PROSPECTS — Google Maps API
+14:43:14 INFO — ============================================================
+14:43:14 INFO — Prospects para refinar: 806
+14:43:18 INFO —   Batch 1/17 | OK: 50 | Sem resultado: 0 | ETA: 0.8min
+14:43:24 INFO —   Batch 2/17 | OK: 99 | Sem resultado: 1 | ETA: 1.1min
+14:43:30 INFO —   Batch 3/17 | OK: 147 | Sem resultado: 3 | ETA: 1.1min
+14:44:46 INFO — ============================================================
+14:44:46 INFO — REFINAMENTO DE PROSPECTS — Google Maps API
+14:44:46 INFO — ============================================================
+14:44:47 INFO — Prospects para refinar: 656
+14:44:51 INFO —   Batch 1/14 | OK: 49 | Sem resultado: 1 | ETA: 0.9min
+14:44:58 INFO —   Batch 2/14 | OK: 99 | Sem resultado: 1 | ETA: 1.0min
+14:45:04 INFO —   Batch 3/14 | OK: 148 | Sem resultado: 2 | ETA: 1.0min
+14:45:10 INFO —   Batch 4/14 | OK: 198 | Sem resultado: 2 | ETA: 0.9min
+14:45:17 INFO —   Batch 5/14 | OK: 248 | Sem resultado: 2 | ETA: 0.8min
+14:45:23 INFO —   Batch 6/14 | OK: 298 | Sem resultado: 2 | ETA: 0.7min
+14:45:29 INFO —   Batch 7/14 | OK: 346 | Sem resultado: 4 | ETA: 0.6min
+14:45:35 INFO —   Batch 8/14 | OK: 396 | Sem resultado: 4 | ETA: 0.5min
+14:45:42 INFO —   Batch 9/14 | OK: 446 | Sem resultado: 4 | ETA: 0.4min
+14:45:47 INFO —   Batch 10/14 | OK: 496 | Sem resultado: 4 | ETA: 0.3min
+14:45:54 INFO —   Batch 11/14 | OK: 545 | Sem resultado: 5 | ETA: 0.2min
+14:46:00 INFO —   Batch 12/14 | OK: 593 | Sem resultado: 7 | ETA: 0.1min
+14:46:05 INFO —   Batch 13/14 | OK: 643 | Sem resultado: 7 | ETA: 0.0min
+14:46:07 INFO —   Batch 14/14 | OK: 648 | Sem resultado: 8 | ETA: -0.1min
+14:46:07 INFO — ============================================================
+14:46:07 INFO — CONCLUÍDO — 648 refinados | 8 sem resultado
+14:46:07 INFO — ============================================================

@@ -14,7 +14,7 @@ from config.settings import GITHUB_TOKEN, GITHUB_REPO
 logger = logging.getLogger(__name__)
 
 OUTPUT_DIR = Path("data/output")
-ARQUIVOS   = ["master_sc.html", "vendedor_sc.html"]
+ARQUIVOS   = ["master_sc.html", "vendedor_sc.html", "checkin.html"]
 
 
 def publicar() -> str:
