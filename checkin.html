@@ -140,7 +140,7 @@
   <div class="geo-status" id="geo-status">Aguardando localização...</div>
 
   <button id="btn-enviar" disabled>Registrar Check-in</button>
-  <a href="painel.html" class="btn-voltar">← Voltar ao Painel</a>
+  <a href="https://fugini-checkin-api.vercel.app/painel" class="btn-voltar">← Voltar ao Painel</a>
   <div class="msg" id="msg"></div>
 </div>
 
@@ -149,7 +149,6 @@
   let lat = null, lng = null;
   let agendamentoId = null;
 
-  // Preenche campos a partir dos parâmetros da URL (quando vem do mapa ou agenda)
   (function preencherDaURL() {
     const params = new URLSearchParams(window.location.search);
     const cod    = params.get('cod_cliente');
@@ -171,14 +170,12 @@
       document.getElementById('badge-agendamento').classList.add('visivel');
     }
 
-    // Pré-preenche cod_vendedor do localStorage (vindo da agenda)
     const codVendedorSalvo = localStorage.getItem('cod_vendedor');
     if (codVendedorSalvo) {
       document.getElementById('cod_vendedor').value = codVendedorSalvo;
     }
   })();
 
-  // Geolocation
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
       pos => {
@@ -201,7 +198,6 @@
     document.getElementById('geo-status').className = 'geo-status err';
   }
 
-  // Envio
   document.getElementById('btn-enviar').addEventListener('click', async () => {
     const cod_vendedor  = document.getElementById('cod_vendedor').value.trim();
     const cod_cliente   = document.getElementById('cod_cliente').value.trim();
@@ -221,7 +217,6 @@
     msg.className = 'msg';
 
     try {
-      // 1) POST do check-in
       const res = await fetch(`${API_BASE}/checkin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -237,18 +232,19 @@
         throw new Error(err.error || 'Erro ao registrar check-in.');
       }
 
-      // 2) Se vier de agendamento, faz PATCH para atualizar status
+      const checkinData = await res.json();
+      const checkinId   = checkinData?.id || null;
+
       let agendamentoAtualizado = false;
       if (agendamentoId) {
         try {
           const patchRes = await fetch(`${API_BASE}/agendamentos?id=${agendamentoId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: status_visita })
+            body: JSON.stringify({ status: status_visita, checkin_id: checkinId })
           });
           agendamentoAtualizado = patchRes.ok;
         } catch (e) {
-          // Check-in foi salvo; só o PATCH falhou. Não bloqueia.
           console.warn('Falha ao atualizar agendamento:', e);
         }
       }
@@ -260,7 +256,6 @@
             : '✅ Check-in registrado. (Falha ao atualizar agendamento — verifique na agenda.)')
         : '✅ Check-in registrado com sucesso!';
 
-      // Limpa só os campos editáveis
       if (!document.getElementById('cod_cliente').readOnly)
         document.getElementById('cod_cliente').value = '';
       if (!document.getElementById('nome_cliente').readOnly)
