@@ -108,6 +108,84 @@
     }
     .msg.ok  { background: #eafaf1; color: #1e8449; display: block; }
     .msg.err { background: #fdecea; color: #c0392b; display: block; }
+
+    /* Modal reagendamento */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-box {
+      background: white;
+      border-radius: 16px;
+      padding: 28px 24px 32px;
+      width: 100%;
+      max-width: 380px;
+    }
+    .modal-titulo {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 6px;
+    }
+    .modal-subtitulo {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 20px;
+    }
+    .modal-label {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .modal-input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid #ddd;
+      border-radius: 10px;
+      font-size: 15px;
+      font-family: 'Segoe UI', sans-serif;
+      outline: none;
+      margin-bottom: 20px;
+    }
+    .modal-input:focus { border-color: #3498db; }
+    .modal-botoes {
+      display: flex;
+      gap: 10px;
+    }
+    .modal-btn-cancelar {
+      flex: 1;
+      padding: 12px;
+      background: #f5f5f5;
+      color: #555;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 0;
+    }
+    .modal-btn-confirmar {
+      flex: 2;
+      padding: 12px;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 0;
+    }
+    .modal-btn-confirmar:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -144,10 +222,27 @@
   <div class="msg" id="msg"></div>
 </div>
 
+<!-- Modal reagendamento -->
+<div class="modal-overlay" id="modal-reagendamento" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-titulo">🔁 Reagendar visita</div>
+    <div class="modal-subtitulo" id="modal-subtitulo">Escolha a nova data para a visita</div>
+    <label class="modal-label">Nova data</label>
+    <input type="date" id="modal-data-reagendamento" class="modal-input" />
+    <div class="modal-botoes">
+      <button class="modal-btn-cancelar" onclick="fecharModalReagendamento()">Cancelar</button>
+      <button class="modal-btn-confirmar" id="modal-btn-confirmar" onclick="confirmarReagendamento()">
+        Confirmar reagendamento
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
   const API_BASE = 'https://fugini-checkin-api.vercel.app/api';
   let lat = null, lng = null;
   let agendamentoId = null;
+  let dadosCheckinPendente = null; // guarda os dados enquanto modal está aberto
 
   (function preencherDaURL() {
     const params = new URLSearchParams(window.location.search);
@@ -174,6 +269,11 @@
     if (codVendedorSalvo) {
       document.getElementById('cod_vendedor').value = codVendedorSalvo;
     }
+
+    // Data mínima do datepicker = amanhã
+    var amanha = new Date();
+    amanha.setDate(amanha.getDate() + 1);
+    document.getElementById('modal-data-reagendamento').min = amanha.toISOString().split('T')[0];
   })();
 
   if (navigator.geolocation) {
@@ -198,6 +298,131 @@
     document.getElementById('geo-status').className = 'geo-status err';
   }
 
+  function abrirModalReagendamento(dadosCheckin) {
+    dadosCheckinPendente = dadosCheckin;
+    document.getElementById('modal-subtitulo').textContent =
+      'Escolha a nova data para ' + dadosCheckin.nome_cliente;
+    document.getElementById('modal-reagendamento').style.display = 'flex';
+  }
+
+  function fecharModalReagendamento() {
+    document.getElementById('modal-reagendamento').style.display = 'none';
+    dadosCheckinPendente = null;
+    document.getElementById('btn-enviar').disabled = false;
+    document.getElementById('btn-enviar').textContent = 'Registrar Check-in';
+  }
+
+  async function confirmarReagendamento() {
+    var novaData = document.getElementById('modal-data-reagendamento').value;
+    if (!novaData) {
+      alert('Selecione a nova data.');
+      return;
+    }
+
+    var btnConfirmar = document.getElementById('modal-btn-confirmar');
+    btnConfirmar.disabled = true;
+    btnConfirmar.textContent = 'Salvando...';
+
+    await finalizarCheckin(dadosCheckinPendente, novaData);
+
+    btnConfirmar.disabled = false;
+    btnConfirmar.textContent = 'Confirmar reagendamento';
+    document.getElementById('modal-reagendamento').style.display = 'none';
+    dadosCheckinPendente = null;
+  }
+
+  async function finalizarCheckin(dados, novaDataReagendamento) {
+    const msg = document.getElementById('msg');
+
+    try {
+      // 1. Registra o check-in
+      const res = await fetch(`${API_BASE}/checkin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cod_vendedor:  dados.cod_vendedor,
+          cod_cliente:   dados.cod_cliente,
+          nome_cliente:  dados.nome_cliente,
+          lat_vendedor:  lat,
+          lng_vendedor:  lng,
+          status_visita: dados.status_visita,
+          observacao:    dados.observacao
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Erro ao registrar check-in.');
+      }
+
+      const checkinData = await res.json();
+      const checkinId   = checkinData?.id || null;
+
+      // 2. Atualiza o agendamento original com status reagendada
+      let agendamentoAtualizado = false;
+      if (agendamentoId) {
+        try {
+          const patchRes = await fetch(`${API_BASE}/agendamentos?id=${agendamentoId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: dados.status_visita, checkin_id: checkinId })
+          });
+          agendamentoAtualizado = patchRes.ok;
+        } catch (e) {
+          console.warn('Falha ao atualizar agendamento:', e);
+        }
+      }
+
+      // 3. Se reagendada, cria novo agendamento na nova data
+      let novoAgendamentoCriado = false;
+      if (dados.status_visita === 'reagendada' && novaDataReagendamento && agendamentoId) {
+        try {
+          const postRes = await fetch(`${API_BASE}/agendamentos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              cod_cliente:   dados.cod_cliente,
+              nome_cliente:  dados.nome_cliente,
+              cod_vendedor:  dados.cod_vendedor,
+              data_visita:   novaDataReagendamento,
+              observacao:    dados.observacao || 'Reagendado',
+              endereco:      dados.endereco || null,
+              ordem_roteiro: null
+            })
+          });
+          novoAgendamentoCriado = postRes.ok || postRes.status === 200;
+        } catch (e) {
+          console.warn('Falha ao criar reagendamento:', e);
+        }
+      }
+
+      // Monta mensagem de sucesso
+      var linhas = [];
+      linhas.push('✅ Check-in registrado!');
+      if (agendamentoAtualizado) linhas.push('📋 Agendamento atualizado.');
+      if (novoAgendamentoCriado) {
+        var partes = novaDataReagendamento.split('-');
+        linhas.push('🔁 Nova visita criada para ' + partes[2] + '/' + partes[1] + '/' + partes[0] + '.');
+      }
+
+      msg.className = 'msg ok';
+      msg.textContent = linhas.join(' ');
+
+      if (!document.getElementById('cod_cliente').readOnly)
+        document.getElementById('cod_cliente').value = '';
+      if (!document.getElementById('nome_cliente').readOnly)
+        document.getElementById('nome_cliente').value = '';
+      document.getElementById('observacao').value = '';
+
+    } catch(e) {
+      msg.className = 'msg err';
+      msg.textContent = '❌ ' + (e.message || 'Falha de conexão. Verifique sua internet.');
+    }
+
+    document.getElementById('btn-enviar').disabled = false;
+    document.getElementById('btn-enviar').textContent = 'Registrar Check-in';
+  }
+
   document.getElementById('btn-enviar').addEventListener('click', async () => {
     const cod_vendedor  = document.getElementById('cod_vendedor').value.trim();
     const cod_cliente   = document.getElementById('cod_cliente').value.trim();
@@ -216,59 +441,16 @@
     document.getElementById('btn-enviar').textContent = 'Enviando...';
     msg.className = 'msg';
 
-    try {
-      const res = await fetch(`${API_BASE}/checkin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cod_vendedor, cod_cliente, nome_cliente,
-          lat_vendedor: lat, lng_vendedor: lng,
-          status_visita, observacao
-        })
-      });
+    const dados = { cod_vendedor, cod_cliente, nome_cliente, status_visita, observacao };
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'Erro ao registrar check-in.');
-      }
-
-      const checkinData = await res.json();
-      const checkinId   = checkinData?.id || null;
-
-      let agendamentoAtualizado = false;
-      if (agendamentoId) {
-        try {
-          const patchRes = await fetch(`${API_BASE}/agendamentos?id=${agendamentoId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: status_visita, checkin_id: checkinId })
-          });
-          agendamentoAtualizado = patchRes.ok;
-        } catch (e) {
-          console.warn('Falha ao atualizar agendamento:', e);
-        }
-      }
-
-      msg.className = 'msg ok';
-      msg.textContent = agendamentoId
-        ? (agendamentoAtualizado
-            ? '✅ Check-in registrado e agendamento atualizado!'
-            : '✅ Check-in registrado. (Falha ao atualizar agendamento — verifique na agenda.)')
-        : '✅ Check-in registrado com sucesso!';
-
-      if (!document.getElementById('cod_cliente').readOnly)
-        document.getElementById('cod_cliente').value = '';
-      if (!document.getElementById('nome_cliente').readOnly)
-        document.getElementById('nome_cliente').value = '';
-      document.getElementById('observacao').value = '';
-
-    } catch(e) {
-      msg.className = 'msg err';
-      msg.textContent = '❌ ' + (e.message || 'Falha de conexão. Verifique sua internet.');
+    // Se reagendada e tem agendamento vinculado, abre modal antes de enviar
+    if (status_visita === 'reagendada' && agendamentoId) {
+      abrirModalReagendamento(dados);
+      return; // pausa aqui — fluxo continua em confirmarReagendamento()
     }
 
-    document.getElementById('btn-enviar').disabled = false;
-    document.getElementById('btn-enviar').textContent = 'Registrar Check-in';
+    // Para outros status, finaliza direto
+    await finalizarCheckin(dados, null);
   });
 </script>
 </body>
