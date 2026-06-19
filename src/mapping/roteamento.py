@@ -536,6 +536,7 @@ def gerar_roteamento_html(df_area: pd.DataFrame, df_prospects: pd.DataFrame | No
       var resultado = document.getElementById('rota-resultado');
       var nCli = parseInt(document.getElementById('rota-n-clientes').value) || 0;
       var nPro = parseInt(document.getElementById('rota-n-prospects').value) || 0;
+      var codVendedor = document.getElementById('rota-cod-vendedor').value.trim().toUpperCase();
 
       if (!endereco) { status.innerHTML = '⚠️ Digite um endereço.'; return; }
       if (nCli === 0 && nPro === 0) { status.innerHTML = '⚠️ Defina ao menos 1 cliente ou prospect por dia.'; return; }
@@ -546,8 +547,38 @@ def gerar_roteamento_html(df_area: pd.DataFrame, df_prospects: pd.DataFrame | No
       var partida = await geocodificarNominatim(endereco);
       if (!partida) { status.innerHTML = '❌ Endereço não encontrado.'; return; }
 
+      // Busca clientes já visitados ou reagendados para excluir do roteiro
+      var visitados = new Set();
+      if (codVendedor) {
+        try {
+          status.innerHTML = '🔍 Verificando histórico de visitas...';
+          var resHist = await fetch(API_AGENDAMENTOS + '?cod_vendedor=' + codVendedor);
+          if (resHist.ok) {
+            var agendamentos = await resHist.json();
+            agendamentos.forEach(function(a) {
+              if (a.status === 'realizada' || a.status === 'reagendada') {
+                visitados.add(String(a.cod_cliente));
+              }
+            });
+          }
+        } catch(e) {
+          // Falha silenciosa: se a API não responder, roteiriza sem filtro
+          // em vez de bloquear o Jhony
+        }
+      }
+
+      var clientesFiltrados = CLIENTES.filter(function(c) {
+        return !visitados.has(String(c.cod));
+      });
+
+      var prospectsFiltrados = PROSPECTS.filter(function(c) {
+        return !visitados.has(String(c.cod));
+      });
+
+      var nVisitados = (CLIENTES.length - clientesFiltrados.length) + (PROSPECTS.length - prospectsFiltrados.length);
+
       status.innerHTML = '⚙️ Calculando rota...';
-      var dias = montarRoteiroDiario(CLIENTES, PROSPECTS, nCli, nPro, partida.lat, partida.lng);
+      var dias = montarRoteiroDiario(clientesFiltrados, prospectsFiltrados, nCli, nPro, partida.lat, partida.lng);
 
       if (dias.length === 0) {
         status.innerHTML = '⚠️ Nenhum cliente ou prospect disponível para roteirizar.';
@@ -568,7 +599,9 @@ def gerar_roteamento_html(df_area: pd.DataFrame, df_prospects: pd.DataFrame | No
 
       desenharRota(dias, partida.lat, partida.lng);
       exibirRoteiro(dias, dist);
-      status.innerHTML = '✅ ' + dias.length + ' dias | ' + totalParadas + ' paradas';
+
+      var msgVisitados = nVisitados > 0 ? ' · ' + nVisitados + ' já visitados ignorados' : '';
+      status.innerHTML = '✅ ' + dias.length + ' dias | ' + totalParadas + ' paradas' + msgVisitados;
       window._diasRotaAtual = dias;
 
       document.getElementById('btn-exportar').style.display      = 'block';
