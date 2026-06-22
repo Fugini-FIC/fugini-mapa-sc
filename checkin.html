@@ -207,9 +207,11 @@
 
   <label>Status da Visita</label>
   <select id="status_visita">
-    <option value="realizada">Realizada</option>
-    <option value="ausente">Ausente</option>
-    <option value="reagendada">Reagendada</option>
+    <option value="realizada">✅ Realizada</option>
+    <option value="reagendada">🔁 Reagendada</option>
+    <option value="fechado">🔒 Cliente fechado (fora do horário)</option>
+    <option value="ausente">❌ Ausente</option>
+    <option value="inexistente">🚫 Empresa não existe mais</option>
   </select>
 
   <label>Observação</label>
@@ -222,17 +224,17 @@
   <div class="msg" id="msg"></div>
 </div>
 
-<!-- Modal reagendamento -->
+<!-- Modal reagendamento / fechado -->
 <div class="modal-overlay" id="modal-reagendamento" style="display:none;">
   <div class="modal-box">
-    <div class="modal-titulo">🔁 Reagendar visita</div>
+    <div class="modal-titulo" id="modal-titulo">🔁 Reagendar visita</div>
     <div class="modal-subtitulo" id="modal-subtitulo">Escolha a nova data para a visita</div>
     <label class="modal-label">Nova data</label>
     <input type="date" id="modal-data-reagendamento" class="modal-input" />
     <div class="modal-botoes">
       <button class="modal-btn-cancelar" onclick="fecharModalReagendamento()">Cancelar</button>
       <button class="modal-btn-confirmar" id="modal-btn-confirmar" onclick="confirmarReagendamento()">
-        Confirmar reagendamento
+        Confirmar
       </button>
     </div>
   </div>
@@ -242,7 +244,18 @@
   const API_BASE = 'https://fugini-checkin-api.vercel.app/api';
   let lat = null, lng = null;
   let agendamentoId = null;
-  let dadosCheckinPendente = null; // guarda os dados enquanto modal está aberto
+  let dadosCheckinPendente = null;
+
+  // Status que disparam modal de nova data
+  const STATUS_COM_MODAL = ['reagendada', 'fechado'];
+
+  // Status que removem o cliente do roteiro permanentemente
+  const STATUS_FINALIZA = ['realizada', 'inexistente', 'ausente'];
+
+  const MODAL_CONFIG = {
+    reagendada: { titulo: '🔁 Reagendar visita',          label: 'Nova data' },
+    fechado:    { titulo: '🔒 Cliente fechado',            label: 'Tentar novamente em' },
+  };
 
   (function preencherDaURL() {
     const params = new URLSearchParams(window.location.search);
@@ -270,7 +283,6 @@
       document.getElementById('cod_vendedor').value = codVendedorSalvo;
     }
 
-    // Data mínima do datepicker = amanhã
     var amanha = new Date();
     amanha.setDate(amanha.getDate() + 1);
     document.getElementById('modal-data-reagendamento').min = amanha.toISOString().split('T')[0];
@@ -300,8 +312,11 @@
 
   function abrirModalReagendamento(dadosCheckin) {
     dadosCheckinPendente = dadosCheckin;
+    var cfg = MODAL_CONFIG[dadosCheckin.status_visita] || MODAL_CONFIG['reagendada'];
+    document.getElementById('modal-titulo').textContent = cfg.titulo;
     document.getElementById('modal-subtitulo').textContent =
-      'Escolha a nova data para ' + dadosCheckin.nome_cliente;
+      cfg.label + ' para ' + dadosCheckin.nome_cliente;
+    document.getElementById('modal-data-reagendamento').value = '';
     document.getElementById('modal-reagendamento').style.display = 'flex';
   }
 
@@ -326,7 +341,7 @@
     await finalizarCheckin(dadosCheckinPendente, novaData);
 
     btnConfirmar.disabled = false;
-    btnConfirmar.textContent = 'Confirmar reagendamento';
+    btnConfirmar.textContent = 'Confirmar';
     document.getElementById('modal-reagendamento').style.display = 'none';
     dadosCheckinPendente = null;
   }
@@ -358,7 +373,7 @@
       const checkinData = await res.json();
       const checkinId   = checkinData?.id || null;
 
-      // 2. Atualiza o agendamento original com status reagendada
+      // 2. Atualiza o agendamento original
       let agendamentoAtualizado = false;
       if (agendamentoId) {
         try {
@@ -373,10 +388,13 @@
         }
       }
 
-      // 3. Se reagendada, cria novo agendamento na nova data
+      // 3. Se reagendada ou fechado, cria novo agendamento na nova data
       let novoAgendamentoCriado = false;
-      if (dados.status_visita === 'reagendada' && novaDataReagendamento && agendamentoId) {
+      if (STATUS_COM_MODAL.includes(dados.status_visita) && novaDataReagendamento && agendamentoId) {
         try {
+          const obsNova = dados.status_visita === 'fechado'
+            ? 'Retorno — cliente estava fechado'
+            : (dados.observacao || 'Reagendado');
           const postRes = await fetch(`${API_BASE}/agendamentos`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -385,24 +403,27 @@
               nome_cliente:  dados.nome_cliente,
               cod_vendedor:  dados.cod_vendedor,
               data_visita:   novaDataReagendamento,
-              observacao:    dados.observacao || 'Reagendado',
+              observacao:    obsNova,
               endereco:      dados.endereco || null,
               ordem_roteiro: null
             })
           });
           novoAgendamentoCriado = postRes.ok || postRes.status === 200;
         } catch (e) {
-          console.warn('Falha ao criar reagendamento:', e);
+          console.warn('Falha ao criar novo agendamento:', e);
         }
       }
 
       // Monta mensagem de sucesso
-      var linhas = [];
-      linhas.push('✅ Check-in registrado!');
+      var linhas = ['✅ Check-in registrado!'];
       if (agendamentoAtualizado) linhas.push('📋 Agendamento atualizado.');
       if (novoAgendamentoCriado) {
         var partes = novaDataReagendamento.split('-');
-        linhas.push('🔁 Nova visita criada para ' + partes[2] + '/' + partes[1] + '/' + partes[0] + '.');
+        var acao = dados.status_visita === 'fechado' ? '🔒 Retorno agendado para' : '🔁 Nova visita criada para';
+        linhas.push(acao + ' ' + partes[2] + '/' + partes[1] + '/' + partes[0] + '.');
+      }
+      if (dados.status_visita === 'inexistente') {
+        linhas.push('🚫 Cliente marcado como inexistente.');
       }
 
       msg.className = 'msg ok';
@@ -443,13 +464,12 @@
 
     const dados = { cod_vendedor, cod_cliente, nome_cliente, status_visita, observacao };
 
-    // Se reagendada e tem agendamento vinculado, abre modal antes de enviar
-    if (status_visita === 'reagendada' && agendamentoId) {
+    // Status com modal abre datepicker antes de enviar
+    if (STATUS_COM_MODAL.includes(status_visita) && agendamentoId) {
       abrirModalReagendamento(dados);
-      return; // pausa aqui — fluxo continua em confirmarReagendamento()
+      return;
     }
 
-    // Para outros status, finaliza direto
     await finalizarCheckin(dados, null);
   });
 </script>
