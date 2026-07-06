@@ -43,6 +43,17 @@
       display: none;
     }
     .badge-agendamento.visivel { display: block; }
+    .badge-erro-acesso {
+      background: #fdecea;
+      color: #c0392b;
+      font-size: 13px;
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+      margin-bottom: 12px;
+      display: none;
+    }
+    .badge-erro-acesso.visivel { display: block; }
     label {
       display: block;
       font-size: 13px;
@@ -192,12 +203,16 @@
 <div class="card">
   <div class="logo">FUGINI — CHECK-IN</div>
 
+  <div class="badge-erro-acesso" id="badge-erro-acesso">
+    ⚠️ Link inválido ou incompleto. Abra o check-in a partir do popup do mapa.
+  </div>
+
   <div class="badge-agendamento" id="badge-agendamento">
-    📅 Check-in vinculado a agendamento
+    📋 Check-in vinculado a agendamento
   </div>
 
   <label>Cód. Vendedor</label>
-  <input type="text" id="cod_vendedor" placeholder="Ex: V001" />
+  <input type="text" id="cod_vendedor" placeholder="Ex: SC01" readonly />
 
   <label>Cód. Cliente</label>
   <input type="text" id="cod_cliente" placeholder="Ex: 00001" />
@@ -245,12 +260,10 @@
   let lat = null, lng = null;
   let agendamentoId = null;
   let dadosCheckinPendente = null;
+  let mapaSenha = null; // NÃO é exibida em nenhum input — só guardada em memória para o POST
 
   // Status que disparam modal de nova data
   const STATUS_COM_MODAL = ['reagendada', 'fechado'];
-
-  // Status que removem o cliente do roteiro permanentemente
-  const STATUS_FINALIZA = ['realizada', 'inexistente', 'ausente'];
 
   const MODAL_CONFIG = {
     reagendada: { titulo: '🔁 Reagendar visita',          label: 'Nova data' },
@@ -259,9 +272,11 @@
 
   (function preencherDaURL() {
     const params = new URLSearchParams(window.location.search);
-    const cod    = params.get('cod_cliente');
-    const nome   = params.get('nome_cliente');
-    const agId   = params.get('agendamento_id');
+    const cod        = params.get('cod_cliente');
+    const nome       = params.get('nome_cliente');
+    const agId       = params.get('agendamento_id');
+    const codVend    = params.get('cod_vendedor');
+    const senha      = params.get('mapa_senha');
 
     if (cod) {
       const el = document.getElementById('cod_cliente');
@@ -278,9 +293,25 @@
       document.getElementById('badge-agendamento').classList.add('visivel');
     }
 
-    const codVendedorSalvo = localStorage.getItem('cod_vendedor');
-    if (codVendedorSalvo) {
-      document.getElementById('cod_vendedor').value = codVendedorSalvo;
+    // MUDANÇA DE SEGURANÇA: cod_vendedor e mapa_senha agora vêm SOMENTE
+    // da URL do link de checkin gerado pelo builder.py (que embute o
+    // cod_vendedor e a senha do mapa de quem está vendo aquele popup).
+    // Não confia mais em campo de texto livre nem em localStorage —
+    // ambos permitiam que qualquer pessoa digitasse/trocasse o
+    // cod_vendedor manualmente e gravasse check-in em nome de outro.
+    if (codVend) {
+      document.getElementById('cod_vendedor').value = codVend;
+    }
+    if (senha) {
+      mapaSenha = senha;
+    }
+
+    // Se o link não veio com cod_vendedor + mapa_senha, o botão de
+    // envio fica bloqueado — não há mais fallback para digitação manual.
+    if (!codVend || !senha) {
+      document.getElementById('badge-erro-acesso').classList.add('visivel');
+      document.getElementById('btn-enviar').disabled = true;
+      document.getElementById('btn-enviar').textContent = 'Link inválido';
     }
 
     var amanha = new Date();
@@ -296,7 +327,9 @@
         document.getElementById('geo-status').textContent =
           `📍 Localização capturada (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
         document.getElementById('geo-status').className = 'geo-status ok';
-        document.getElementById('btn-enviar').disabled = false;
+        if (mapaSenha) {
+          document.getElementById('btn-enviar').disabled = false;
+        }
       },
       err => {
         document.getElementById('geo-status').textContent =
@@ -350,7 +383,8 @@
     const msg = document.getElementById('msg');
 
     try {
-      // 1. Registra o check-in
+      // 1. Registra o check-in — agora inclui mapa_senha para validação
+      //    no servidor (ver checkin.ts)
       const res = await fetch(`${API_BASE}/checkin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -361,7 +395,8 @@
           lat_vendedor:  lat,
           lng_vendedor:  lng,
           status_visita: dados.status_visita,
-          observacao:    dados.observacao
+          observacao:    dados.observacao,
+          mapa_senha:    mapaSenha
         })
       });
 
@@ -452,9 +487,15 @@
     const observacao    = document.getElementById('observacao').value.trim();
     const msg           = document.getElementById('msg');
 
-    if (!cod_vendedor || !cod_cliente || !nome_cliente) {
+    if (!cod_vendedor || !mapaSenha) {
       msg.className = 'msg err';
-      msg.textContent = 'Preencha Cód. Vendedor, Cód. Cliente e Nome Cliente.';
+      msg.textContent = 'Link inválido — abra o check-in a partir do popup do mapa.';
+      return;
+    }
+
+    if (!cod_cliente || !nome_cliente) {
+      msg.className = 'msg err';
+      msg.textContent = 'Preencha Cód. Cliente e Nome Cliente.';
       return;
     }
 
