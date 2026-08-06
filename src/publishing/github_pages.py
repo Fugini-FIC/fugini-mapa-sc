@@ -14,10 +14,33 @@ from config.settings import GITHUB_TOKEN, GITHUB_REPO
 logger = logging.getLogger(__name__)
 
 OUTPUT_DIR = Path("data/output")
-ARQUIVOS   = ["master_sc.html", "vendedor_sc.html", "checkin.html"]
+
+# Fonte dos HTMLs ESTÁTICOS — os que não são gerados pelo pipeline.
+# `data/output/` está no .gitignore (é saída de build), então um arquivo
+# estático morando lá não tem histórico: some se a máquina for trocada e só
+# pode ser editado por remendo (era o caso do patch_checkin_id.py). Por isso
+# o checkin.html passou a morar aqui, versionado, e daqui é publicado.
+WEB_DIR   = Path("src/web")
+ESTATICOS = ["checkin.html"]
+
+ARQUIVOS  = ["master_sc.html", "vendedor_sc.html"] + ESTATICOS
 
 
-def publicar() -> str:
+def _origem(nome: str) -> Path:
+    """De onde sai cada arquivo: estático = fonte versionada, resto = build."""
+    return (WEB_DIR if nome in ESTATICOS else OUTPUT_DIR) / nome
+
+
+def publicar(apenas: list[str] | None = None) -> str:
+    """Publica os HTMLs na gh-pages.
+
+    `apenas` limita a publicação a alguns arquivos — usado pelo
+    publicar_checkin.py para subir só o formulário, sem precisar rodar o
+    pipeline inteiro (geocodificação + DW + mapas de ~3 MB) por causa de uma
+    mudança de HTML. O clone é da gh-pages e só os arquivos listados são
+    sobrescritos, então os mapas não são tocados.
+    """
+    arquivos = apenas if apenas else ARQUIVOS
     logger.info(f"Publicando via git push: {GITHUB_REPO}")
 
     repo_url = f"https://{GITHUB_TOKEN}@github.com/{GITHUB_REPO}.git"
@@ -32,10 +55,10 @@ def publicar() -> str:
         )
 
         # Copia os HTMLs para o clone
-        for nome in ARQUIVOS:
-            src = OUTPUT_DIR / nome
+        for nome in arquivos:
+            src = _origem(nome)
             if not src.exists():
-                logger.warning(f"  Arquivo não encontrado: {nome}")
+                logger.warning(f"  Arquivo não encontrado: {src}")
                 continue
             shutil.copy2(src, tmp / nome)
             logger.info(f"  Copiado: {nome} ({src.stat().st_size / 1024:.1f} KB)")
