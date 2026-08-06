@@ -31,6 +31,14 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
 GITHUB_REPO  = os.getenv("GITHUB_REPO", "Fugini-FIC/fugini-mapa-sc")
 
 # ============================================================
+# CRM
+# ============================================================
+# URL do CRM (Next.js na Vercel). Usada nos popups para levar o vendedor
+# a agenda com o cliente ja preenchido. O mapa NAO chama a API de
+# agendamentos direto: quem cria a visita e o CRM, atras do login.
+CRM_BASE_URL = os.getenv("CRM_BASE_URL", "https://fugini-checkin-api.vercel.app")
+
+# ============================================================
 # REGIÃO — São Carlos e entorno
 # ============================================================
 IBGE_ALVO = [

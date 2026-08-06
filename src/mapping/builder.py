@@ -16,7 +16,7 @@ import folium
 import folium.plugins
 from pathlib import Path
 
-from config.settings import USUARIOS_MAPA, COR_AREA, NOME_REGIAO
+from config.settings import USUARIOS_MAPA, COR_AREA, NOME_REGIAO, CRM_BASE_URL
 from src.mapping.crypto      import criptografar_html
 from src.mapping.roteamento  import gerar_roteamento_html
 
@@ -187,6 +187,7 @@ def _botao_exportar_html() -> str:
       "Nunca compraram":                 ["nunca_comprou"],
       "Disponíveis (sem representante)": ["disponivel"],
       "Sem representante":               ["disponivel"],
+      "Clientes da carteira":            ["ativo", "inativo", "nunca_comprou"],
     };
 
     function getCasosSelecionados() {
@@ -273,11 +274,15 @@ def _botao_exportar_html() -> str:
 
 
 def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
-                df_roteamento: pd.DataFrame | None = None, perfil: str = "master") -> folium.Map:
+                df_roteamento: pd.DataFrame | None = None, perfil: str = "master",
+                cod_vendedor: str | None = None, mapa_senha: str | None = None) -> folium.Map:
     """
-    perfil='vendedor' → painel esquerdo mostra só disponíveis
-    perfil='master'   → painel esquerdo mostra tudo
-    df_roteamento     → DataFrame filtrado para roteamento (só disponíveis)
+    perfil='vendedor' → painel mostra carteira completa (todos os status visíveis)
+    perfil='master'   → painel mostra tudo separado por status
+    df_roteamento     → DataFrame filtrado para roteamento
+    cod_vendedor/mapa_senha → embutidos no link de checkin do popup, para
+        que o checkin.ts consiga validar a senha do mapa no servidor
+        (mitigação de segurança — ver checkin.ts)
     """
 
     if df_roteamento is None:
@@ -295,11 +300,14 @@ def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
 
     contagens = {}
 
-    # ── Clientes com representante — renderiza sempre, mas só aparece no painel do master ──
+    # ── Clientes com representante ──────────────────────────────────────────
+    # FIX: perfil vendedor mostra TODOS os status por padrão (carteira completa)
     for status in ["ativo", "inativo", "nunca_comprou"]:
         label = LABEL_STATUS[status]
-        # Vendedor: nunca_comprou visível por padrão (é a carteira dele)
-        show_default = (perfil == "vendedor" and status == "nunca_comprou")
+        show_default = (perfil == "vendedor") or (perfil == "master" and False)
+        # Master: nenhum marcado por padrão; Vendedor: todos marcados
+        if perfil == "master":
+            show_default = False
         fg = folium.FeatureGroup(name=label, show=show_default)
         df_status = df[df["status_compra"] == status] if "status_compra" in df.columns else pd.DataFrame()
         count = 0
@@ -319,6 +327,8 @@ def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
             rep      = _safe_str(row.get("representante"), "-")
             cor      = COR_STATUS[status]
             nome_encoded = urllib.parse.quote(nome)
+            cod_vendedor_encoded = urllib.parse.quote(cod_vendedor or "")
+            mapa_senha_encoded   = urllib.parse.quote(mapa_senha or "")
             popup_html = f"""
             <div style="font-family:Arial;font-size:12px;min-width:180px">
                 <b>{nome}</b><br>
@@ -329,11 +339,18 @@ def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
                 <span style="color:#666">Última NF: {ult_nf}</span><br>
                 <span style="color:#666">Sem comprar: {dias_str}</span><br>
                 <span style="color:#666">Faturamento total: {fat_fmt}</span><br>
-                <a href="checkin.html?cod_cliente={cod}&nome_cliente={nome_encoded}"
+                <a href="checkin.html?cod_cliente={cod}&nome_cliente={nome_encoded}&cod_vendedor={cod_vendedor_encoded}&mapa_senha={mapa_senha_encoded}"
                    style="display:inline-block;margin-top:8px;padding:5px 10px;
                           background:#D2001B;color:white;border-radius:5px;
                           font-size:11px;font-weight:700;text-decoration:none;">
                   📍 Check-in
+                </a>
+                <a href="{CRM_BASE_URL}/agenda?cod_cliente={cod}&nome_cliente={nome_encoded}"
+                   target="_blank" rel="noopener"
+                   style="display:inline-block;margin-top:8px;margin-left:4px;padding:5px 10px;
+                          background:#fff;color:#1a1a2e;border:1px solid #ccc;border-radius:5px;
+                          font-size:11px;font-weight:700;text-decoration:none;">
+                  📅 Agendar
                 </a>
             </div>"""
             folium.CircleMarker(
@@ -361,6 +378,8 @@ def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
         credito = _safe_float(row.get("limite_disp"))
         cor     = COR_STATUS["disponivel"]
         nome_encoded = urllib.parse.quote(nome)
+        cod_vendedor_encoded = urllib.parse.quote(cod_vendedor or "")
+        mapa_senha_encoded   = urllib.parse.quote(mapa_senha or "")
         popup_html = f"""
         <div style="font-family:Arial;font-size:12px;min-width:180px">
             <b>{nome}</b><br>
@@ -368,11 +387,18 @@ def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
             <span style="color:#666">Cód: {cod}</span><br>
             <span style="color:#666">{cidade}</span><br>
             <span style="color:#666">Crédito disp.: R$ {credito:,.2f}</span><br>
-            <a href="checkin.html?cod_cliente={cod}&nome_cliente={nome_encoded}"
+            <a href="checkin.html?cod_cliente={cod}&nome_cliente={nome_encoded}&cod_vendedor={cod_vendedor_encoded}&mapa_senha={mapa_senha_encoded}"
                style="display:inline-block;margin-top:8px;padding:5px 10px;
                       background:#D2001B;color:white;border-radius:5px;
                       font-size:11px;font-weight:700;text-decoration:none;">
               📍 Check-in
+            </a>
+            <a href="{CRM_BASE_URL}/agenda?cod_cliente={cod}&nome_cliente={nome_encoded}"
+               target="_blank" rel="noopener"
+               style="display:inline-block;margin-top:8px;margin-left:4px;padding:5px 10px;
+                      background:#fff;color:#1a1a2e;border:1px solid #ccc;border-radius:5px;
+                      font-size:11px;font-weight:700;text-decoration:none;">
+              📅 Agendar
             </a>
         </div>"""
         folium.CircleMarker(
@@ -438,24 +464,21 @@ def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
     cor_disp       = COR_STATUS["disponivel"]
     label_disp     = LABEL_STATUS["disponivel"]
 
-    # Seção COM REPRESENTANTE
-    # Master: mostra ativo, inativo, nunca_comprou
-    # Vendedor: mostra só nunca_comprou (carteira dele), marcado por padrão
+    # FIX: perfil vendedor — checkbox único "Carteira" que liga/desliga todos os status
     com_dono_html = ""
     if perfil == "vendedor":
-        cor   = COR_STATUS["nunca_comprou"]
-        label = LABEL_STATUS["nunca_comprou"]
-        n     = contagens.get("nunca_comprou", 0)
+        # FIX: usar total_com_dono em vez de só nunca_comprou
+        n = total_com_dono
         com_dono_html = f"""
       <div style="font-size:11px;font-weight:700;color:#444;margin-bottom:6px;">
         👥 CARTEIRA ({n})
       </div>
       <label style="display:flex;align-items:center;cursor:pointer;gap:6px;margin-bottom:5px;">
         <input type="checkbox" checked
-               onchange="toggleLayer('{label}', this.checked)"
-               style="width:13px;height:13px;cursor:pointer;accent-color:{cor['border']};">
+               onchange="toggleCarteira(this.checked)"
+               style="width:13px;height:13px;cursor:pointer;accent-color:#c0392b;">
         <span style="display:inline-block;width:10px;height:10px;border-radius:50%;
-                     background:{cor['fill']};border:1.5px solid {cor['border']};flex-shrink:0;"></span>
+                     background:#e74c3c;border:1.5px solid #c0392b;flex-shrink:0;"></span>
         <span style="font-size:11px;color:#333;">Clientes da carteira <b>({n})</b></span>
       </label>
       <div style="border-top:1px solid #eee;margin-top:8px;padding-top:8px;"></div>"""
@@ -586,11 +609,17 @@ def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
         }}
       }});
     }}
+
+    // FIX: toggle todos os status da carteira de uma vez
+    function toggleCarteira(visible) {{
+      var camadas = ['{LABEL_STATUS["ativo"]}', '{LABEL_STATUS["inativo"]}', '{LABEL_STATUS["nunca_comprou"]}'];
+      camadas.forEach(function(nome) {{ toggleLayer(nome, visible); }});
+    }}
     </script>"""
 
-    navbar_html, conteudo_roteiro_html = gerar_roteamento_html(df_roteamento, df_prospects)
+    navbar_html, conteudo_roteiro_html = gerar_roteamento_html(df_roteamento, df_prospects, cod_vendedor=cod_vendedor)
 
-    # Seção disponíveis — só aparece no master
+    # Seção disponíveis no painel de abas — só aparece no master
     if perfil == "master":
         disp_html = f"""
         <div style="font-size:11px;font-weight:700;color:#2980b9;margin-bottom:6px;">
@@ -679,12 +708,16 @@ def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
       }});
     }}
 
+    function toggleCarteira(visible) {{
+      var camadas = ['{LABEL_STATUS["ativo"]}', '{LABEL_STATUS["inativo"]}', '{LABEL_STATUS["nunca_comprou"]}'];
+      camadas.forEach(function(nome) {{ toggleLayer(nome, visible); }});
+    }}
+
     function trocarAba(aba) {{
       var filtros = document.getElementById('conteudo-filtros');
       var roteiro = document.getElementById('conteudo-roteiro');
       var btnFiltros = document.getElementById('aba-filtros');
       var btnRoteiro = document.getElementById('aba-roteiro');
-      // Se estiver colapsado, expande primeiro
       var painel = document.getElementById('painel-unificado');
       if (painel.dataset.colapsado === 'true') togglePainel();
       if (aba === 'filtros') {{
@@ -713,17 +746,14 @@ def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
       var colapsado = painel.dataset.colapsado === 'true';
 
       if (colapsado) {{
-        // Expande
         painel.style.width = '245px';
         abas.forEach(function(b) {{ b.style.display = ''; }});
-        // Mostra o conteúdo que estava ativo
         var abaAtiva = painel.dataset.abaAtiva || 'filtros';
         if (abaAtiva === 'filtros') {{ conteudoFiltros.style.display = 'block'; conteudoRoteiro.style.display = 'none'; }}
         else {{ conteudoFiltros.style.display = 'none'; conteudoRoteiro.style.display = 'block'; }}
         btn.textContent = '‹';
         painel.dataset.colapsado = 'false';
       }} else {{
-        // Colapsa — guarda qual aba estava ativa
         var abaAtiva = conteudoRoteiro.style.display === 'block' ? 'roteiro' : 'filtros';
         painel.dataset.abaAtiva = abaAtiva;
         painel.style.width = '32px';
@@ -765,14 +795,21 @@ def exportar_mapas(df: pd.DataFrame, criptografar: bool = True, df_prospects: pd
         slug    = arquivo.replace(".html", "")
         perfil  = "vendedor" if usuario == "vendedor_sc" else "master"
 
-        # Vendedor recebe sua carteira completa (df já vem filtrado pelo loader)
         df_mapa = df
 
+        # cod_vendedor para o link de checkin: "SC01" é o cod_vendedor real
+        # do Jhony (confirmado via SELECT na tabela vendedores), "MASTER"
+        # é o cod_vendedor real do usuário master (idem). Necessário para
+        # o checkin.ts validar a mapa_senha no servidor — mitigação de
+        # segurança que fecha o endpoint /api/checkin, que hoje aceita
+        # gravação sem autenticação nenhuma (confirmado por teste real).
+        cod_vendedor_checkin = "SC01" if usuario == "vendedor_sc" else "MASTER"
+
         logger.info(f"Gerando {arquivo} (perfil={perfil})...")
-        # Roteamento: master usa disponíveis, vendedor usa sua carteira
         df_rot = df_disponiveis if perfil == "master" else df_mapa
         mapa = montar_mapa(df_mapa, df_prospects=df_prospects,
-                           df_roteamento=df_rot, perfil=perfil)
+                           df_roteamento=df_rot, perfil=perfil,
+                           cod_vendedor=cod_vendedor_checkin, mapa_senha=senha)
         _salvar_html(mapa, OUTPUT_DIR / f"_{slug}_raw.html", OUTPUT_DIR / arquivo, senha, criptografar)
         arquivos[usuario] = OUTPUT_DIR / arquivo
         logger.info(f"✅ {arquivo}")
