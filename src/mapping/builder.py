@@ -273,6 +273,41 @@ def _botao_exportar_html() -> str:
     """
 
 
+def _df_credito_sem_duplicata_matriz(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    O ERP replica o limite_disp da matriz em cada filial (mesmo CNPJ raiz,
+    mesmo valor de crédito) — característica geral da tabela de clientes,
+    NÃO específica de uma região: medido em 06/08/2026, a carteira de São
+    Carlos somava R$ 2,55 mi quando o real era R$ 924 mil (2,76x). Somar
+    direto infla o total do Heatmap de Crédito. Esta função deduplica por
+    CNPJ raiz SOMENTE quando o limite_disp é idêntico entre as filiais —
+    preserva casos onde cada filial tem limite genuinamente diferente.
+
+    Usada apenas para os cálculos de soma_cred/heat_data — não afeta
+    os marcadores individuais no mapa (cada cliente continua sendo
+    plotado normalmente). Mesma função existe no Projeto_23 (SP).
+    """
+    if "cnpj" not in df.columns:
+        return df
+
+    df = df.copy()
+    df["_cnpj_raiz"] = df["cnpj"].astype(str).str.zfill(14).str[:8]
+
+    # Para cada raiz, mantém só 1 linha SE todas as filiais tiverem o
+    # mesmo limite_disp (sintoma de duplicação). Se os valores variarem
+    # de verdade entre filiais, mantém todas as linhas.
+    valores_por_raiz = df.groupby("_cnpj_raiz")["limite_disp"].nunique()
+    raizes_duplicadas = valores_por_raiz[valores_por_raiz == 1].index
+
+    mask_duplicada = df["_cnpj_raiz"].isin(raizes_duplicadas) & (df["_cnpj_raiz"] != "00000000")
+    df_dedup = pd.concat([
+        df[~mask_duplicada],
+        df[mask_duplicada].drop_duplicates(subset="_cnpj_raiz", keep="first"),
+    ])
+
+    return df_dedup.drop(columns=["_cnpj_raiz"])
+
+
 def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
                 df_roteamento: pd.DataFrame | None = None, perfil: str = "master",
                 cod_vendedor: str | None = None, mapa_senha: str | None = None) -> folium.Map:
@@ -413,10 +448,13 @@ def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
     contagens["disponivel"] = count_disp
 
     # ── Heatmap ─────────────────────────────────────────────────────────────
+    # Usa df deduplicado por CNPJ raiz para não inflar o crédito agregado
+    # quando o mesmo limite está replicado entre filiais da mesma matriz.
+    df_credito = _df_credito_sem_duplicata_matriz(df)
     fg_heat = folium.FeatureGroup(name="Heatmap Crédito", show=False)
     heat_data = [
         [float(row["lat_final"]), float(row["lng_final"]), float(row["limite_disp"])]
-        for _, row in df.iterrows()
+        for _, row in df_credito.iterrows()
         if pd.notna(row.get("lat_final")) and pd.notna(row.get("lng_final"))
         and pd.notna(row.get("limite_disp")) and float(row.get("limite_disp", 0)) > 0
         and row.get("geo_valida_final", True)
@@ -457,7 +495,7 @@ def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
 
     # ── Painel lateral ───────────────────────────────────────────────────────
     export_data_js = _build_export_data(df, df_prospects)
-    soma_cred      = df["limite_disp"].fillna(0).sum()
+    soma_cred      = df_credito["limite_disp"].fillna(0).sum()
     cred_fmt       = f"R$ {soma_cred/1_000:.0f}K" if soma_cred >= 1_000 else f"R$ {soma_cred:,.0f}"
     total_com_dono = contagens.get("ativo", 0) + contagens.get("inativo", 0) + contagens.get("nunca_comprou", 0)
     n_disp         = contagens.get("disponivel", 0)
