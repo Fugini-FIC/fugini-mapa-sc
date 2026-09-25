@@ -323,7 +323,7 @@ def montar_mapa(df: pd.DataFrame, df_prospects: pd.DataFrame | None = None,
     if df_roteamento is None:
         df_roteamento = df[df["tipo_cliente"] == "disponivel"] if "tipo_cliente" in df.columns else df
 
-    mapa = folium.Map(location=[-21.994, -47.890], zoom_start=10, tiles="CartoDB positron")
+    mapa = folium.Map(location=[-21.994, -47.890], zoom_start=10, tiles="OpenStreetMap")
 
     mapa.get_root().html.add_child(folium.Element(
         """<style>
