@@ -1,7 +1,0 @@
-﻿__pycache__/
-*.pyc
-.venv/
-data/output/
-data/input/
-pipeline.log
-config/.env
