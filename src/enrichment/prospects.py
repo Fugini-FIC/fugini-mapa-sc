@@ -7,17 +7,12 @@
 import logging
 import pandas as pd
 import psycopg2
+from config.settings import pg_params
 from datetime import date
 
 logger = logging.getLogger(__name__)
 
-PG_MAPA = dict(
-    host="192.168.0.242",
-    port=5432,
-    dbname="mapa_clientes",
-    user="postgres",
-    password="Postgres2025",
-)
+PG_MAPA = pg_params("mapa_clientes")
 
 MUNICIPIOS_SC = (
     "SAO CARLOS", "ARARAQUARA", "IBATE", "ITIRAPINA",
