@@ -1,7 +1,7 @@
 # ============================================================
 # src/ingestion/loader.py
 # Carrega clientes da região de São Carlos diretamente do
-# totvs_cliente.csv (\\192.168.0.226\pdi\in\full\).
+# totvs_cliente.csv (caminho em TOTVS_CLIENTE_CSV no .env).
 #
 # Dois grupos de clientes:
 #   1. DISPONÍVEIS — sem dono (NomERC vazio ou DISPONIVEL - FS), status Ativo

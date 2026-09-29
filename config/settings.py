@@ -16,13 +16,21 @@ GOOGLE_API_KEY          = os.getenv("GOOGLE_API_KEY", "")
 GOOGLE_MAPS_FRONTEND_KEY = os.getenv("GOOGLE_MAPS_FRONTEND_KEY", "")
 
 # ============================================================
-# POSTGRESQL — banco mapa_clientes
+# POSTGRESQL
+# Host, usuário e senha vêm SÓ do .env — o repo é público, então
+# nada de endereço ou credencial com valor padrão no código.
 # ============================================================
-PG_HOST     = os.getenv("PG_HOST",     "192.168.0.242")
+PG_HOST     = os.environ["PG_HOST"]
 PG_PORT     = int(os.getenv("PG_PORT", "5432"))
 PG_DBNAME   = os.getenv("PG_DBNAME",   "mapa_clientes")
-PG_USER     = os.getenv("PG_USER",     "postgres")
-PG_PASSWORD = os.getenv("PG_PASSWORD", "Postgres2025")
+PG_USER     = os.environ["PG_USER"]
+PG_PASSWORD = os.environ["PG_PASSWORD"]
+
+
+def pg_params(dbname: str = PG_DBNAME) -> dict:
+    """Parâmetros de conexão psycopg2 para um banco do servidor de dados."""
+    return dict(host=PG_HOST, port=PG_PORT, dbname=dbname,
+                user=PG_USER, password=PG_PASSWORD)
 
 # ============================================================
 # GITHUB
@@ -60,14 +68,22 @@ NOME_REGIAO = "São Carlos e Região"
 # ============================================================
 # FONTE DE DADOS — CSV do TOTVS
 # ============================================================
-TOTVS_CLIENTE_CSV = r"\\192.168.0.226\pdi\in\full\totvs_cliente.csv"
+TOTVS_CLIENTE_CSV = os.environ["TOTVS_CLIENTE_CSV"]
 
 # ============================================================
 # USUÁRIOS DO MAPA
+# Senhas vêm do .env (MAPA_SENHA_<USUARIO>) e TÊM de ser iguais a
+# vendedores.mapa_senha no Supabase: o CRM abre o mapa com
+# mapa_url#mapa_senha e o /api/checkin recusa senha diferente.
 # ============================================================
+
+def _senha_mapa(usuario: str) -> str:
+    """Senha do mapa, lida do .env como MAPA_SENHA_<USUARIO>."""
+    return os.environ[f"MAPA_SENHA_{usuario.upper()}"]
+
 USUARIOS_MAPA = {
-    "master_sc":   {"senha": "fugini@master_sc", "arquivo": "master_sc.html"},
-    "vendedor_sc": {"senha": "fugini@sc1",        "arquivo": "vendedor_sc.html"},
+    "master_sc":   {"senha": _senha_mapa("master_sc"), "arquivo": "master_sc.html"},
+    "vendedor_sc": {"senha": _senha_mapa("vendedor_sc"), "arquivo": "vendedor_sc.html"},
 }
 
 # ============================================================
